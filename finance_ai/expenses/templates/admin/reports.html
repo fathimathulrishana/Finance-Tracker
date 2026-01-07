@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Reports | Finance Tracker{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="mb-1"><i class="bi bi-file-earmark-pdf"></i> Reports</h2>
+    <p class="text-muted mb-0">Generate and download expense reports.</p>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'admin_dashboard' %}"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="row g-4">
+  <!-- CSV Export -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="mb-3">
+          <i class="bi bi-filetype-csv" style="font-size: 3rem; color: #198754;"></i>
+        </div>
+        <h5 class="card-title">CSV Export</h5>
+        <p class="card-text text-muted">
+          Download all expenses as a comma-separated values file. Compatible with Excel, Google Sheets, and other spreadsheet applications.
+        </p>
+        
+        <ul class="list-unstyled mb-3">
+          <li><i class="bi bi-check-circle text-success"></i> <small>All expense data included</small></li>
+          <li><i class="bi bi-check-circle text-success"></i> <small>Compatible with Excel</small></li>
+          <li><i class="bi bi-check-circle text-success"></i> <small>Easy to analyze</small></li>
+        </ul>
+        
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" name="report_type" value="csv" class="btn btn-success w-100">
+            <i class="bi bi-download"></i> Download CSV
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Export -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="mb-3">
+          <i class="bi bi-file-earmark-pdf" style="font-size: 3rem; color: #dc3545;"></i>
+        </div>
+        <h5 class="card-title">PDF Export</h5>
+        <p class="card-text text-muted">
+          Download all expenses as a formatted PDF report. Professional document suitable for printing or email distribution.
+        </p>
+        
+        <ul class="list-unstyled mb-3">
+          <li><i class="bi bi-check-circle text-success"></i> <small>Professional formatting</small></li>
+          <li><i class="bi bi-check-circle text-success"></i> <small>Print-ready</small></li>
+          <li><i class="bi bi-check-circle text-success"></i> <small>Organized table layout</small></li>
+        </ul>
+        
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" name="report_type" value="pdf" class="btn btn-danger w-100">
+            <i class="bi bi-download"></i> Download PDF
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Additional Report Options -->
+<div class="mt-4">
+  <h5>Report Contents</h5>
+  <div class="alert alert-info">
+    <ul class="mb-0">
+      <li><strong>Date:</strong> Expense date</li>
+      <li><strong>Username:</strong> User who made the expense</li>
+      <li><strong>Category:</strong> Food, Travel, Shopping, Bills, or Others</li>
+      <li><strong>Amount:</strong> Expense amount in dollars</li>
+      <li><strong>Description:</strong> User's expense description</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Placeholder: Advanced Reports (Coming Soon) -->
+<div class="mt-4">
+  <h5>Advanced Reports (Coming Soon - Phase 2)</h5>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card border-warning">
+        <div class="card-body">
+          <h6 class="card-title"><i class="bi bi-bar-chart"></i> Spending Forecast Report</h6>
+          <p class="card-text text-muted"><small>AI-powered predictions based on historical spending patterns.</small></p>
+          <div class="alert alert-secondary mb-0" style="font-size: 0.85rem;">
+            <i class="bi bi-hourglass-split"></i> Coming Soon
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-warning">
+        <div class="card-body">
+          <h6 class="card-title"><i class="bi bi-exclamation-triangle"></i> Anomaly Detection Report</h6>
+          <p class="card-text text-muted"><small>Identify unusual spending patterns and potential fraudulent expenses.</small></p>
+          <div class="alert alert-secondary mb-0" style="font-size: 0.85rem;">
+            <i class="bi bi-hourglass-split"></i> Coming Soon
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

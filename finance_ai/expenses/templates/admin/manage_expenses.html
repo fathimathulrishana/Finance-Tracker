@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Manage Expenses | Finance Tracker{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="mb-1"><i class="bi bi-receipt"></i> Manage Expenses</h2>
+    <p class="text-muted mb-0">View, filter, and delete expenses across all users.</p>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'admin_dashboard' %}"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label fw-600">Filter by Month</label>
+        <input type="month" name="month" class="form-control" value="{{ selected_month }}">
+      </div>
+      
+      <div class="col-md-4">
+        <label class="form-label fw-600">Filter by Category</label>
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          {% for code, label in categories %}
+            <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-md-4">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-primary w-100" type="submit"><i class="bi bi-funnel"></i> Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Expenses Table -->
+<div class="card">
+  <div class="card-header bg-white border-bottom">
+    <h5 class="mb-0">Expenses ({{ expenses.count }})</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Username</th>
+            <th>Category</th>
+            <th class="text-end">Amount</th>
+            <th>Description</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for expense in expenses %}
+          <tr>
+            <td><small class="text-muted">{{ expense.date }}</small></td>
+            <td>
+              <strong>{{ expense.user.username }}</strong>
+            </td>
+            <td>
+              <span class="badge 
+                {% if expense.category == 'Food' %}bg-danger
+                {% elif expense.category == 'Travel' %}bg-info
+                {% elif expense.category == 'Shopping' %}bg-warning text-dark
+                {% elif expense.category == 'Bills' %}bg-danger
+                {% else %}bg-secondary
+                {% endif %}">
+                {{ expense.category }}
+              </span>
+            </td>
+            <td class="text-end fw-600">${{ expense.amount|floatformat:2 }}</td>
+            <td><small>{{ expense.description|truncatewords:15 }}</small></td>
+            <td class="text-end">
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="expense_id" value="{{ expense.id }}">
+                <button type="submit" name="action" value="delete" class="btn btn-sm btn-danger" onclick="return confirm('Delete this expense?');">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-4 text-muted">No expenses found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> <strong>Note:</strong>
+    You can filter expenses by month and category. Use the filter form above to narrow down results.
+  </div>
+</div>
+{% endblock %}

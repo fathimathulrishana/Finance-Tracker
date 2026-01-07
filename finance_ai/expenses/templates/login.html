@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Login | Finance Tracker{% endblock %}
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 85vh;">
+  <div class="col-md-5 col-lg-4">
+    <div class="card border-0 shadow-lg">
+      <div class="card-body p-5">
+        <div class="text-center mb-4">
+          <div style="font-size: 3rem; color: #0d6efd;" class="mb-2">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <h2 class="fw-700">Welcome Back</h2>
+          <p class="text-muted">Sign in to your Finance AI account</p>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger" role="alert">
+            {{ form.non_field_errors.0 }}
+          </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-600"><i class="bi bi-person"></i> Username</label>
+            <input type="text" name="username" class="form-control form-control-lg" placeholder="Enter your username" required autofocus />
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-600"><i class="bi bi-lock"></i> Password</label>
+            <input type="password" name="password" class="form-control form-control-lg" placeholder="Enter your password" required />
+          </div>
+
+          <button class="btn btn-primary btn-lg w-100 fw-600 mb-3" type="submit"><i class="bi bi-box-arrow-in-right"></i> Sign In</button>
+        </form>
+
+        <hr class="my-4" />
+
+        <p class="text-center mb-0">
+          Don't have an account? <a href="/register/" class="fw-600 text-primary text-decoration-none">Create one now</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

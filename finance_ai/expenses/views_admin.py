@@ -26,30 +26,47 @@ def is_admin(user):
     return user.is_staff and user.is_superuser
 
 
-@user_passes_test(is_admin)
+@user_passes_test(is_admin, redirect_field_name=None)
 def admin_dashboard(request):
-    """Admin dashboard with system-wide analytics."""
-    # Count metrics
+    """Admin dashboard with system-wide analytics (PHASE-1)."""
+    # Extra safety check: redirect non-admin users to regular dashboard
+    if not (request.user.is_staff and request.user.is_superuser):
+        return redirect('dashboard')
+    # ============================================
+    # SYSTEM-WIDE METRICS
+    # ============================================
     total_users = User.objects.count()
     total_expenses = Expense.objects.count()
     total_amount = Expense.objects.aggregate(total=Sum('amount'))['total'] or 0
+    avg_expense = total_amount / total_expenses if total_expenses > 0 else 0
     
-    # Category-wise distribution (current month)
-    today = datetime.now()
-    current_month_start = today.replace(day=1)
-    month_expenses = Expense.objects.filter(
-        date__gte=current_month_start
-    )
+    # Most spent category (system-wide)
+    most_spent_category = Expense.objects.values('category').annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('-total').first()
     
-    category_data = month_expenses.values('category').annotate(
+    if most_spent_category:
+        most_spent = most_spent_category['category']
+    else:
+        most_spent = 'N/A'
+    
+    # ============================================
+    # CATEGORY-WISE DISTRIBUTION (ALL TIME)
+    # ============================================
+    all_category_data = Expense.objects.values('category').annotate(
         total=Sum('amount')
-    ).order_by('category')
+    ).order_by('-total')
     
-    category_labels = [row['category'] for row in category_data]
-    category_values = [float(row['total']) for row in category_data]
+    category_labels = [row['category'] for row in all_category_data]
+    category_values = [float(row['total']) for row in all_category_data]
     
-    # Monthly trend (last 12 months)
+    # ============================================
+    # MONTHLY TREND (LAST 12 MONTHS)
+    # ============================================
+    today = datetime.now()
     year_ago = today - timedelta(days=365)
+    
     yearly_data = Expense.objects.filter(
         date__gte=year_ago
     ).annotate(
@@ -61,29 +78,36 @@ def admin_dashboard(request):
     trend_labels = [f"{month_name[row['month'].month]}" for row in yearly_data]
     trend_values = [float(row['total']) for row in yearly_data]
     
-    # Recent expenses
-    recent_expenses = Expense.objects.select_related('user').order_by('-date')[:5]
-    
-    # Calculate average per expense
-    avg_expense = total_amount / total_expenses if total_expenses > 0 else 0
+    # ============================================
+    # RECENT 10 EXPENSES (FOR ADMIN REVIEW)
+    # ============================================
+    recent_expenses = Expense.objects.select_related('user').order_by('-date')[:10]
     
     context = {
+        # Metrics
         'total_users': total_users,
         'total_expenses': total_expenses,
         'total_amount': f"{total_amount:.2f}",
         'avg_expense': f"{avg_expense:.2f}",
+        'most_spent': most_spent,
+        # Charts
         'category_labels': json.dumps(category_labels),
         'category_values': json.dumps(category_values),
         'trend_labels': json.dumps(trend_labels),
         'trend_values': json.dumps(trend_values),
+        # Recent activity
         'recent_expenses': recent_expenses,
     }
     return render(request, 'admin/admin_dashboard.html', context)
 
 
-@user_passes_test(is_admin)
+@user_passes_test(is_admin, redirect_field_name=None)
 def manage_users(request):
     """Manage all users - view, activate, deactivate, delete."""
+    # Extra safety check: redirect non-admin users
+    if not (request.user.is_staff and request.user.is_superuser):
+        return redirect('dashboard')
+    
     users = User.objects.all().order_by('-date_joined')
     
     if request.method == 'POST':
@@ -110,9 +134,13 @@ def manage_users(request):
     return render(request, 'admin/manage_users.html', context)
 
 
-@user_passes_test(is_admin)
+@user_passes_test(is_admin, redirect_field_name=None)
 def manage_expenses(request):
     """Manage all expenses - view, filter, delete."""
+    # Extra safety check: redirect non-admin users
+    if not (request.user.is_staff and request.user.is_superuser):
+        return redirect('dashboard')
+    
     expenses = Expense.objects.select_related('user').order_by('-date')
     
     # Filter by month
@@ -146,9 +174,13 @@ def manage_expenses(request):
     return render(request, 'admin/manage_expenses.html', context)
 
 
-@user_passes_test(is_admin)
+@user_passes_test(is_admin, redirect_field_name=None)
 def reports(request):
     """Generate reports - CSV, PDF exports."""
+    # Extra safety check: redirect non-admin users
+    if not (request.user.is_staff and request.user.is_superuser):
+        return redirect('dashboard')
+    
     if request.method == 'POST':
         report_type = request.POST.get('report_type')
         

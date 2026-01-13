@@ -2,14 +2,43 @@ from datetime import date
 from calendar import month_name
 
 from django.contrib import messages
-from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.views import LoginView
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponseForbidden
 
 from .forms import ExpenseForm, MonthFilterForm, RegisterForm
 from .models import Expense
+
+
+def is_regular_user(user):
+	"""Check if user is a regular user (not admin/staff)."""
+	return not (user.is_staff or user.is_superuser)
+
+
+class CustomLoginView(LoginView):
+	"""
+	Custom login view that redirects based on user role.
+	
+	- Admin users (is_staff OR is_superuser) → /admin-panel/
+	- Regular users → /dashboard/
+	"""
+	template_name = 'login.html'
+	
+	def get_success_url(self):
+		"""
+		Determine redirect URL based on user role after successful login.
+		"""
+		# Check if user is admin (staff or superuser)
+		if self.request.user.is_staff or self.request.user.is_superuser:
+			# Redirect admin users to admin dashboard
+			return '/admin-panel/'
+		else:
+			# Redirect regular users to user dashboard
+			return '/dashboard/'
 
 
 def register(request):
@@ -27,7 +56,13 @@ def register(request):
 
 
 @login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
 def dashboard(request):
+	"""User dashboard - restricted to regular users only."""
+	# If admin tries to access, they're redirected to admin dashboard
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+	
 	today = date.today()
 	user_expenses = Expense.objects.filter(user=request.user)
 
@@ -63,7 +98,13 @@ def dashboard(request):
 
 
 @login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
 def expense_list(request):
+	"""User expense list - restricted to regular users only."""
+	# If admin tries to access, they're redirected to admin dashboard
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+	
 	form = MonthFilterForm(request.GET or None)
 	qs = Expense.objects.filter(user=request.user)
 
@@ -81,7 +122,13 @@ def expense_list(request):
 
 
 @login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
 def add_expense(request):
+	"""Add expense view - restricted to regular users only."""
+	# If admin tries to access, they're redirected to admin dashboard
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+	
 	if request.method == 'POST':
 		form = ExpenseForm(request.POST)
 		if form.is_valid():
@@ -97,6 +144,7 @@ def add_expense(request):
 
 
 @login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
 def edit_expense(request, pk: int):
 	expense = get_object_or_404(Expense, pk=pk, user=request.user)
 	if request.method == 'POST':
@@ -112,6 +160,7 @@ def edit_expense(request, pk: int):
 
 
 @login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
 def delete_expense(request, pk: int):
 	expense = get_object_or_404(Expense, pk=pk, user=request.user)
 	if request.method == 'POST':

@@ -23,9 +23,23 @@ class ExpenseForm(forms.ModelForm):
         model = Expense
         fields = ("category", "amount", "description")
         widgets = {
-            "category": forms.Select(attrs={"class": "form-select"}),
-            "amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "category": forms.Select(attrs={
+                "class": "form-select",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "amount": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "placeholder": "0.00",
+                "min": "0",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "e.g., Lunch at downtown café",
+                "style": "min-height: 90px; padding: 0.6rem 0.75rem;"
+            }),
         }
 
 

@@ -1,52 +1,206 @@
 {% extends 'base.html' %}
 {% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Expense | Finance Tracker{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-    <div class="mb-4">
-      <h2 class="mb-1"><i class="bi bi-{% if is_edit %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if is_edit %}Edit{% else %}Add{% endif %} Expense</h2>
-      <p class="text-muted">{% if is_edit %}Update your expense details{% else %}Record a new expense transaction{% endif %}</p>
+
+<!-- ========================================
+     PAGE HEADER
+     Professional header matching User Dashboard style
+     ======================================== -->
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="text-uppercase small text-muted mb-1">
+        <i class="bi bi-{% if is_edit %}pencil-square{% else %}plus-circle{% endif %}"></i>
+        {% if is_edit %}Modify Expense{% else %}Record Expense{% endif %}
+      </p>
+      <h1 class="fw-bold mb-2">{% if is_edit %}Edit Expense{% else %}Add New Expense{% endif %}</h1>
+      <p class="text-muted mb-0">{% if is_edit %}Update your expense details{% else %}Quickly record your daily spending{% endif %}</p>
     </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Expenses</a>
+    </div>
+  </div>
 
-    <div class="card">
-      <div class="card-body p-4">
-        <form method="post" novalidate>
-          {% csrf_token %}
+  <!-- ========================================
+       CSS STYLES
+       Consistent with User Dashboard styling
+       ======================================== -->
+  <style>
+    /* Card styling */
+    .form-card { border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .form-card .card-body { padding: 2.5rem; }
+    
+    /* Form field styling */
+    .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    }
+    .form-select:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    }
+    
+    /* Input labels */
+    .form-label {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    /* Required field indicator */
+    .required-indicator {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    
+    /* Helper text */
+    .form-text {
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin-top: 0.4rem;
+    }
+    
+    /* Error styling */
+    .error-message {
+      color: #dc3545;
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    
+    /* Button styling */
+    .btn-submit {
+      padding: 0.7rem 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+    }
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+    }
+    
+    /* Form section separator */
+    .form-section {
+      margin-bottom: 2rem;
+    }
+    .form-section:last-of-type {
+      margin-bottom: 0;
+    }
+    
+    /* Icon styling in form */
+    .form-label i {
+      color: #0d6efd;
+      font-size: 1rem;
+    }
+  </style>
 
-          <div class="mb-3">
-            <label class="form-label fw-600"><i class="bi bi-tag"></i> Category</label>
-            {{ form.category }}
-            {% if form.category.errors %}
-              <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
-            {% endif %}
-          </div>
+  <!-- ========================================
+       FORM CONTAINER
+       Card-based form with consistent styling
+       ======================================== -->
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card form-card">
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
 
-          <div class="mb-3">
-            <label class="form-label fw-600"><i class="bi bi-cash-coin"></i> Amount</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light border-0">$</span>
-              {{ form.amount }}
+            <!-- ========================================
+                 FORM SECTION 1: CATEGORY
+                 ======================================== -->
+            <div class="form-section">
+              <label for="{{ form.category.id_for_label }}" class="form-label">
+                <i class="bi bi-tags"></i> Category
+                <span class="required-indicator">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-0" style="color: #0d6efd;">
+                  <i class="bi bi-tag"></i>
+                </span>
+                {{ form.category }}
+              </div>
+              {% if form.category.errors %}
+                <div class="error-message">
+                  <i class="bi bi-exclamation-circle"></i>
+                  <span>{{ form.category.errors.0 }}</span>
+                </div>
+              {% endif %}
+              <small class="form-text">Select the category that best describes this expense</small>
             </div>
-            {% if form.amount.errors %}
-              <div class="text-danger small mt-1">{{ form.amount.errors.0 }}</div>
-            {% endif %}
-          </div>
 
-          <div class="mb-4">
-            <label class="form-label fw-600"><i class="bi bi-chat-left-text"></i> Description (Optional)</label>
-            {{ form.description }}
-            {% if form.description.errors %}
-              <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
-            {% endif %}
-          </div>
+            <!-- ========================================
+                 FORM SECTION 2: AMOUNT
+                 ======================================== -->
+            <div class="form-section">
+              <label for="{{ form.amount.id_for_label }}" class="form-label">
+                <i class="bi bi-cash-coin"></i> Amount
+                <span class="required-indicator">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-0" style="color: #16a34a; font-weight: 600;">₹</span>
+                {{ form.amount }}
+              </div>
+              {% if form.amount.errors %}
+                <div class="error-message">
+                  <i class="bi bi-exclamation-circle"></i>
+                  <span>{{ form.amount.errors.0 }}</span>
+                </div>
+              {% endif %}
+              <small class="form-text">Enter the expense amount </small>
+            </div>
 
-          <div class="d-grid gap-2 d-sm-flex">
-            <button class="btn btn-primary fw-600" type="submit"><i class="bi bi-check-circle"></i> Save Expense</button>
-            <a href="/expenses/" class="btn btn-outline-secondary fw-600"><i class="bi bi-x-circle"></i> Cancel</a>
-          </div>
-        </form>
+            <!-- ========================================
+                 FORM SECTION 3: DESCRIPTION
+                 ======================================== -->
+            <div class="form-section">
+              <label for="{{ form.description.id_for_label }}" class="form-label">
+                <i class="bi bi-chat-left-text"></i> Description
+                <span style="font-size: 0.75rem; color: #6c757d; font-weight: normal;">(Optional)</span>
+              </label>
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div class="error-message">
+                  <i class="bi bi-exclamation-circle"></i>
+                  <span>{{ form.description.errors.0 }}</span>
+                </div>
+              {% endif %}
+              <small class="form-text">Add notes about this expense (e.g., where, why, etc.)</small>
+            </div>
+
+            <!-- ========================================
+                 ACTION BUTTONS
+                 Primary and secondary actions
+                 ======================================== -->
+            <div class="d-grid gap-2 d-sm-flex pt-3 border-top">
+              <button class="btn btn-primary btn-submit flex-grow-1" type="submit">
+                <i class="bi bi-check-circle"></i> 
+                {% if is_edit %}Update Expense{% else %}Save Expense{% endif %}
+              </button>
+              <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary btn-submit">
+                <i class="bi bi-arrow-left"></i> Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ========================================
+           HELPFUL TIP
+           Additional context for users
+           ======================================== -->
+      <div class="alert alert-info alert-dismissible fade show mt-4" role="alert" style="border: 1px solid rgba(13, 110, 253, 0.2); background-color: rgba(13, 110, 253, 0.05);">
+        <i class="bi bi-lightbulb me-2" style="color: #0d6efd;"></i>
+        <strong>Tip:</strong> Save your expense immediately for accurate tracking. You can always edit it later.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     </div>
   </div>
+
 </div>
 {% endblock %}

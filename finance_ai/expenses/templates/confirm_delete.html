@@ -6,7 +6,7 @@
 <ul>
   <li><strong>Date:</strong> {{ expense.date }}</li>
   <li><strong>Category:</strong> {{ expense.category }}</li>
-  <li><strong>Amount:</strong> ${{ expense.amount|floatformat:2 }}</li>
+  <li><strong>Amount:</strong> ₹{{ expense.amount|floatformat:2 }}</li>
   <li><strong>Description:</strong> {{ expense.description }}</li>
 </ul>
 <form method="post">

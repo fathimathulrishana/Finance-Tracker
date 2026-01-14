@@ -50,7 +50,7 @@
                 {{ e.category }}
               </span>
             </td>
-            <td class="text-end fw-600">${{ e.amount|floatformat:2 }}</td>
+            <td class="text-end fw-600">₹{{ e.amount|floatformat:2 }}</td>
             <td><small>{{ e.description|truncatewords:10 }}</small></td>
             <td class="text-end">
               <a class="btn btn-sm btn-outline-primary" href="/expenses/{{ e.id }}/edit/" title="Edit"><i class="bi bi-pencil"></i></a>

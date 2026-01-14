@@ -226,7 +226,7 @@ def generate_csv_report(request):
     writer = csv.writer(response)
     
     # Write header row
-    writer.writerow(['Date', 'Username', 'Category', 'Amount', 'Description'])
+    writer.writerow(['Date', 'Username', 'Category', 'Amount (INR)', 'Description'])
     
     # Write data rows
     for expense in expenses:
@@ -234,7 +234,7 @@ def generate_csv_report(request):
             expense.date.strftime('%Y-%m-%d'),
             expense.user.username,
             expense.category,
-            f"{expense.amount:.2f}",
+            f"₹{expense.amount:.2f}",
             expense.description,
         ])
     
@@ -290,7 +290,7 @@ def generate_pdf_report(request):
         data.append([
             expense.user.username,
             expense.category,
-            f"${expense.amount:.2f}",
+            f"₹{expense.amount:.2f}",
             expense.date.strftime('%Y-%m-%d'),
         ])
     

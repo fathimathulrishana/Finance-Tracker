@@ -72,7 +72,7 @@
                 {{ expense.category }}
               </span>
             </td>
-            <td class="text-end fw-600">${{ expense.amount|floatformat:2 }}</td>
+            <td class="text-end fw-600">₹{{ expense.amount|floatformat:2 }}</td>
             <td><small>{{ expense.description|truncatewords:15 }}</small></td>
             <td class="text-end">
               <form method="post" class="d-inline">

@@ -18,6 +18,13 @@ import csv
 import json
 from calendar import month_name
 
+# ReportLab imports for PDF generation
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.units import inch
+
 from .models import Expense
 
 
@@ -176,7 +183,14 @@ def manage_expenses(request):
 
 @user_passes_test(is_admin, redirect_field_name=None)
 def reports(request):
-    """Generate reports - CSV, PDF exports."""
+    """
+    Generate reports - CSV and PDF exports.
+    
+    PHASE-1 ONLY:
+    - CSV export with proper headers
+    - PDF export using ReportLab
+    - Separate code paths (no mixing)
+    """
     # Extra safety check: redirect non-admin users
     if not (request.user.is_staff and request.user.is_superuser):
         return redirect('dashboard')
@@ -184,92 +198,133 @@ def reports(request):
     if request.method == 'POST':
         report_type = request.POST.get('report_type')
         
+        # Separate paths for CSV and PDF - NO mixing!
         if report_type == 'csv':
-            return generate_csv_report()
+            return generate_csv_report(request)
         elif report_type == 'pdf':
-            return generate_pdf_report()
+            return generate_pdf_report(request)
     
     return render(request, 'admin/reports.html')
 
 
-def generate_csv_report():
-    """Generate and download CSV report of all expenses."""
+def generate_csv_report(request):
+    """
+    Generate CSV report of all expenses.
+    
+    Returns:
+        HttpResponse with Content-Type: text/csv
+        Includes: Date, Username, Category, Amount, Description
+    """
+    # Fetch all expenses
     expenses = Expense.objects.select_related('user').order_by('-date')
     
+    # Create CSV response with correct Content-Type
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="expenses_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    response['Content-Disposition'] = f'attachment; filename="expenses_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
     
+    # Create CSV writer
     writer = csv.writer(response)
+    
+    # Write header row
     writer.writerow(['Date', 'Username', 'Category', 'Amount', 'Description'])
     
+    # Write data rows
     for expense in expenses:
         writer.writerow([
-            expense.date,
+            expense.date.strftime('%Y-%m-%d'),
             expense.user.username,
             expense.category,
-            expense.amount,
+            f"{expense.amount:.2f}",
             expense.description,
         ])
     
     return response
 
 
-def generate_pdf_report():
-    """Generate and download PDF report of all expenses."""
-    try:
-        from reportlab.lib.pagesizes import letter, A4
-        from reportlab.lib import colors
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.units import inch
-        from datetime import datetime
-    except ImportError:
-        # Fallback to CSV if reportlab not installed
-        return generate_csv_report()
+def generate_pdf_report(request):
+    """
+    Generate PDF report of all expenses using ReportLab.
     
+    Returns:
+        HttpResponse with Content-Type: application/pdf
+        Includes: Title, Table with User|Category|Amount|Date
+    
+    IMPORTANT: This does NOT reuse CSV logic - completely separate!
+    """
+    # Fetch all expenses
     expenses = Expense.objects.select_related('user').order_by('-date')
     
+    # Create PDF response with correct Content-Type
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="expenses_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="expenses_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
     
+    # Create PDF document
     doc = SimpleDocTemplate(response, pagesize=letter)
     elements = []
     styles = getSampleStyleSheet()
     
-    # Title
-    title = Paragraph("Expense Report - All Users", styles['Heading1'])
+    # ==========================================
+    # TITLE
+    # ==========================================
+    title = Paragraph("<b>Expense Report - All Users</b>", styles['Title'])
     elements.append(title)
     elements.append(Spacer(1, 0.3 * inch))
     
-    # Report date
-    report_date = Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal'])
-    elements.append(report_date)
-    elements.append(Spacer(1, 0.3 * inch))
+    # ==========================================
+    # REPORT METADATA
+    # ==========================================
+    report_info = f"<b>Generated:</b> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}<br/>"
+    report_info += f"<b>Total Expenses:</b> {expenses.count()}"
+    info_paragraph = Paragraph(report_info, styles['Normal'])
+    elements.append(info_paragraph)
+    elements.append(Spacer(1, 0.4 * inch))
     
-    # Data table
-    data = [['Date', 'Username', 'Category', 'Amount', 'Description']]
+    # ==========================================
+    # TABLE: User | Category | Amount | Date
+    # ==========================================
+    # Table header
+    data = [['User', 'Category', 'Amount', 'Date']]
+    
+    # Table data rows
     for expense in expenses:
         data.append([
-            str(expense.date),
             expense.user.username,
             expense.category,
             f"${expense.amount:.2f}",
-            expense.description[:30],  # Truncate long descriptions
+            expense.date.strftime('%Y-%m-%d'),
         ])
     
-    table = Table(data, colWidths=[1.2*inch, 1.2*inch, 1*inch, 1*inch, 2*inch])
+    # Create table with column widths
+    table = Table(data, colWidths=[1.5*inch, 1.5*inch, 1.2*inch, 1.5*inch])
+    
+    # Apply table styling
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        # Header row styling
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        
+        # Data rows styling
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#ecf0f1')),
+        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
+        ('ALIGN', (2, 1), (2, -1), 'RIGHT'),  # Amount column right-aligned
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+        
+        # Grid
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.black),
     ]))
     
     elements.append(table)
+    
+    # Build PDF
     doc.build(elements)
     
     return response

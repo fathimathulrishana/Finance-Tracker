@@ -24,7 +24,7 @@ class CustomLoginView(LoginView):
 	Custom login view that redirects based on user role.
 	
 	- Admin users (is_staff OR is_superuser) → /admin-panel/
-	- Regular users → /dashboard/
+	- Regular users → / (dashboard)
 	"""
 	template_name = 'login.html'
 	
@@ -37,8 +37,8 @@ class CustomLoginView(LoginView):
 			# Redirect admin users to admin dashboard
 			return '/admin-panel/'
 		else:
-			# Redirect regular users to user dashboard
-			return '/dashboard/'
+			# Redirect regular users to user dashboard (root path)
+			return '/'
 
 
 def register(request):
@@ -86,9 +86,13 @@ def dashboard(request):
 	trend_labels = [f"{month_name[row['m'].month]}" for row in trend_qs]
 	trend_values = [float(row['total']) for row in trend_qs]
 
+	# Current month display (e.g., "January 2026")
+	current_month = f"{month_name[today.month]} {today.year}"
+
 	context = {
 		'total_month': total_month,
 		'count_month': count_month,
+		'current_month': current_month,
 		'category_labels': category_labels,
 		'category_values': category_values,
 		'trend_labels': trend_labels,

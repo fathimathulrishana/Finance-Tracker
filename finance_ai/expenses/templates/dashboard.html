@@ -1,95 +1,226 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard | Finance Tracker{% endblock %}
+{% block title %}User Dashboard | Finance Tracker{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h2 class="mb-1"><i class="bi bi-speedometer2"></i> Dashboard</h2>
-    <p class="text-muted mb-0">Welcome back! Here's your financial overview.</p>
+
+<!-- ========================================
+     PAGE HEADER
+     Clean, professional header matching Admin Dashboard style
+     ======================================== -->
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="text-uppercase small text-muted mb-1"><i class="bi bi-person-circle"></i> Personal Finance Hub</p>
+      <h1 class="fw-bold mb-2">User Dashboard</h1>
+      <p class="text-muted mb-0">Personal expense overview & insights. Phase-1: Basic Tracking</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'add_expense' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Expense</a>
+      <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary"><i class="bi bi-list-ul"></i> View All</a>
+    </div>
   </div>
+
+  <!-- ========================================
+       CSS STYLES
+       Modern card designs with gradients, shadows, and hover effects
+       ======================================== -->
+  <style>
+    /* Spotlight gradient cards */
+    .card-spotlight { border: none; color: #fff; }
+    .card-spotlight .icon { font-size: 1.8rem; }
+    
+    /* Gradient backgrounds matching Admin Dashboard */
+    .bg-sky { background: linear-gradient(135deg, #0d6efd 0%, #4dabf7 100%); }
+    .bg-emerald { background: linear-gradient(135deg, #16a34a 0%, #3bc47c 100%); }
+    .bg-amber { background: linear-gradient(135deg, #f59e0b 0%, #f8b84e 100%); }
+    .bg-indigo { background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%); }
+    
+    /* Hover effect for interactive cards */
+    .card-hover { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+    
+    /* Typography */
+    .metric-label { letter-spacing: 0.03em; font-size: 0.85rem; text-transform: uppercase; }
+    
+    /* Empty state styling */
+    .empty-state { padding: 3rem 2rem; text-align: center; }
+    .empty-state .icon { font-size: 4rem; opacity: 0.2; }
+  </style>
+
+  <!-- ========================================
+       METRIC CARDS (4 COLUMNS)
+       Displays key financial metrics with gradient backgrounds
+       ======================================== -->
+  <div class="row g-3 mb-4">
+    <!-- Card 1: Total Monthly Expense -->
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-spotlight bg-sky card-hover h-100">
+        <div class="card-body d-flex align-items-center justify-content-between">
+          <div>
+            <p class="metric-label mb-1 text-white-50">Total Monthly Expense</p>
+            <h3 class="fw-bold mb-0">${{ total_month|floatformat:2 }}</h3>
+            <small class="text-white-50">This month's spending</small>
+          </div>
+          <i class="bi bi-cash-coin icon text-white-50"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Number of Expenses -->
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-spotlight bg-emerald card-hover h-100">
+        <div class="card-body d-flex align-items-center justify-content-between">
+          <div>
+            <p class="metric-label mb-1 text-white-50">Number of Expenses</p>
+            <h3 class="fw-bold mb-0">{{ count_month }}</h3>
+            <small class="text-white-50">Transactions logged</small>
+          </div>
+          <i class="bi bi-receipt icon text-white-50"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Average Expense -->
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-spotlight bg-amber card-hover h-100">
+        <div class="card-body d-flex align-items-center justify-content-between">
+          <div>
+            <p class="metric-label mb-1 text-white-50">Average Expense</p>
+            <h3 class="fw-bold mb-0">${% if count_month > 0 %}{% widthratio total_month count_month 1 %}{% else %}0{% endif %}</h3>
+            <small class="text-white-50">Per transaction</small>
+          </div>
+          <i class="bi bi-graph-up icon text-white-50"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Current Month -->
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-spotlight bg-indigo card-hover h-100">
+        <div class="card-body d-flex align-items-center justify-content-between">
+          <div>
+            <p class="metric-label mb-1 text-white-50">Current Period</p>
+            <h3 class="fw-bold mb-0">{{ current_month }}</h3>
+            <small class="text-white-50">Active tracking</small>
+          </div>
+          <i class="bi bi-calendar2-check icon text-white-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       ACTION SHORTCUT CARDS
+       Quick access to key user functions
+       ======================================== -->
+  <div class="row g-3 mb-4">
+    <!-- Shortcut 1: Add Expense -->
+    <div class="col-sm-6 col-lg-4">
+      <a href="{% url 'add_expense' %}" class="card card-hover text-decoration-none h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-plus-circle-fill" style="font-size: 2rem; color: #0d6efd;"></i>
+          <p class="fw-semibold mt-2 mb-1">Add Expense</p>
+          <small class="text-muted">Record a new transaction</small>
+        </div>
+      </a>
+    </div>
+
+    <!-- Shortcut 2: View All Expenses -->
+    <div class="col-sm-6 col-lg-4">
+      <a href="{% url 'expense_list' %}" class="card card-hover text-decoration-none h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-list-ul" style="font-size: 2rem; color: #16a34a;"></i>
+          <p class="fw-semibold mt-2 mb-1">View Expenses</p>
+          <small class="text-muted">Browse all transactions</small>
+        </div>
+      </a>
+    </div>
+
+    <!-- Shortcut 3: Download Reports (Placeholder for Phase-1) -->
+    <div class="col-sm-6 col-lg-4">
+      <div class="card card-hover h-100" style="opacity: 0.6; cursor: not-allowed;">
+        <div class="card-body text-center">
+          <i class="bi bi-download" style="font-size: 2rem; color: #f59e0b;"></i>
+          <p class="fw-semibold mt-2 mb-1">Download Reports</p>
+          <small class="text-muted">CSV & PDF exports</small>
+          <br><span class="badge bg-secondary mt-1" style="font-size: 0.65rem;">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       CHARTS SECTION
+       Visual analytics with improved card layout
+       ======================================== -->
+  {% if count_month > 0 %}
+  <div class="row g-3 mb-4">
+    <!-- Chart 1: Category-wise Breakdown (Pie Chart) -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5 class="card-title mb-0"><i class="bi bi-pie-chart-fill"></i> Category-wise Breakdown</h5>
+              <small class="text-muted">Where your money goes</small>
+            </div>
+            <span class="badge text-bg-primary">This Month</span>
+          </div>
+          <canvas id="pieChart" height="240" aria-label="Category distribution"></canvas>
+          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Identify your top spending categories to manage your budget better.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 2: Monthly Expense Trend (Line Chart) -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5 class="card-title mb-0"><i class="bi bi-graph-up-arrow"></i> Monthly Expense Trend</h5>
+              <small class="text-muted">Spending over time</small>
+            </div>
+            <span class="badge text-bg-success">12 Months</span>
+          </div>
+          <canvas id="lineChart" height="240" aria-label="Monthly trend"></canvas>
+          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Track your spending patterns and identify months with unusual expenses.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  
+  <!-- ========================================
+       EMPTY STATE
+       Displayed when user has no expenses
+       ======================================== -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body empty-state">
+          <i class="bi bi-wallet2 icon text-primary"></i>
+          <h4 class="mt-3 mb-2">No Expenses Added Yet</h4>
+          <p class="text-muted mb-3">Start tracking your finances by adding your first expense.</p>
+          <a href="{% url 'add_expense' %}" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle"></i> Add Your First Expense
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 
-<div class="row g-3 mb-4">
-  <div class="col-md-6 col-lg-3">
-    <div class="card border-start border-primary border-5">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <p class="text-muted mb-1 small">Total Monthly Expense</p>
-            <h3 class="mb-0 text-primary">${{ total_month|floatformat:2 }}</h3>
-          </div>
-          <i class="bi bi-cash-coin text-primary" style="font-size: 1.8rem; opacity: 0.3;"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6 col-lg-3">
-    <div class="card border-start border-success border-5">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <p class="text-muted mb-1 small">Number of Expenses</p>
-            <h3 class="mb-0 text-success">{{ count_month }}</h3>
-          </div>
-          <i class="bi bi-receipt text-success" style="font-size: 1.8rem; opacity: 0.3;"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6 col-lg-3">
-    <div class="card border-start border-warning border-5">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <p class="text-muted mb-1 small">This Month</p>
-            <h3 class="mb-0 text-warning">Current</h3>
-          </div>
-          <i class="bi bi-calendar2 text-warning" style="font-size: 1.8rem; opacity: 0.3;"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6 col-lg-3">
-    <div class="card border-start border-info border-5">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <p class="text-muted mb-1 small">Avg. per Expense</p>
-            <h3 class="mb-0 text-info">{% widthratio total_month count_month 1 %}</h3>
-          </div>
-          <i class="bi bi-graph-up text-info" style="font-size: 1.8rem; opacity: 0.3;"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row g-4">
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header bg-white border-bottom">
-        <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Category-wise Breakdown</h5>
-      </div>
-      <div class="card-body">
-        <canvas id="pieChart" style="max-height: 300px;"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header bg-white border-bottom">
-        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Monthly Expense Trend</h5>
-      </div>
-      <div class="card-body">
-        <canvas id="lineChart" style="max-height: 300px;"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- ========================================
+     CHART.JS SCRIPTS
+     Renders pie and line charts using Chart.js
+     ======================================== -->
 <script>
+  // Only render charts if data exists
+  {% if count_month > 0 %}
+  
+  // PIE CHART: Category-wise expense breakdown
   const pieCtx = document.getElementById('pieChart');
   const pieChart = new Chart(pieCtx, {
     type: 'pie',
@@ -97,26 +228,80 @@
       labels: {{ category_labels|safe }},
       datasets: [{
         data: {{ category_values|safe }},
-        backgroundColor: ['#0d6efd','#6c757d','#198754','#dc3545','#ffc107','#20c997'],
+        backgroundColor: [
+          '#0d6efd',  // Blue
+          '#16a34a',  // Green
+          '#f59e0b',  // Amber
+          '#dc3545',  // Red
+          '#6366f1',  // Indigo
+          '#20c997'   // Teal
+        ],
+        borderWidth: 2,
+        borderColor: '#fff'
       }]
     },
-    options: { responsive: true }
+    options: { 
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 15,
+            font: { size: 12 }
+          }
+        }
+      }
+    }
   });
 
+  // LINE CHART: Monthly expense trend
   const lineCtx = document.getElementById('lineChart');
   const lineChart = new Chart(lineCtx, {
     type: 'line',
     data: {
       labels: {{ trend_labels|safe }},
       datasets: [{
-        label: 'Expenses',
+        label: 'Monthly Expenses',
         data: {{ trend_values|safe }},
         borderColor: '#0d6efd',
-        fill: false,
-        tension: 0.2
+        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#0d6efd',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
       }]
     },
-    options: { responsive: true }
+    options: { 
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            padding: 15,
+            font: { size: 12 }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value;
+            }
+          }
+        }
+      }
+    }
   });
+  
+  {% endif %}
 </script>
 {% endblock %}

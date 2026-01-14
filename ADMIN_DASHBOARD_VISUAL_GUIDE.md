@@ -284,5 +284,5 @@ Labels: metric-label (uppercase, small)
 - `Ctrl+R` → Export Reports
 - `Ctrl+?` → Help menu
 
----
+---......
 

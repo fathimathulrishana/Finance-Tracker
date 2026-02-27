@@ -1,5 +1,5 @@
 import csv
-from datetime import date
+from datetime import date, timedelta, datetime
 from calendar import month_name
 
 from django.contrib import messages
@@ -23,6 +23,66 @@ from expenses.ml.predictors.lstm_predictor import predict_next_month
 from expenses.ml.predictors.category_predictor import predict_category
 from expenses.ml.predictors.anomaly_predictor import detect_anomaly as ml_anomaly
 
+def get_date_range(range_type, start_str=None, end_str=None):
+	"""Returns safe start_date, end_date, and textual label given a range_type identifier."""
+	today = date.today()
+	start_date, end_date, label = None, None, ""
+	
+	if range_type == 'current' or not range_type:
+		start_date = today.replace(day=1)
+		try: end_date = start_date.replace(month=start_date.month+1, day=1) - timedelta(days=1)
+		except ValueError: end_date = start_date.replace(year=start_date.year+1, month=1, day=1) - timedelta(days=1)
+		label = f"Current Month ({today.strftime('%b %Y')})"
+	elif range_type == 'previous':
+		end_date = today.replace(day=1) - timedelta(days=1)
+		start_date = end_date.replace(day=1)
+		label = f"Previous Month ({start_date.strftime('%b %Y')})"
+	elif range_type == '3months':
+		end_date = today
+		start_date = (today.replace(day=1) - timedelta(days=65)).replace(day=1)
+		label = "Last 3 Months"
+	elif range_type == '6months':
+		end_date = today
+		start_date = (today.replace(day=1) - timedelta(days=160)).replace(day=1)
+		label = "Last 6 Months"
+	elif range_type == 'year':
+		start_date = today.replace(month=1, day=1)
+		end_date = today.replace(month=12, day=31)
+		label = f"This Year ({today.year})"
+	elif range_type == 'custom' and start_str and end_str:
+		try:
+			start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+			end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+			label = f"Custom ({start_date.strftime('%b %d, %Y')} - {end_date.strftime('%b %d, %Y')})"
+		except ValueError: pass 
+	
+	# Ultimate fallback securely defaulting securely to current execution boundaries 
+	if not start_date or not end_date:
+		start_date = today.replace(day=1)
+		try: end_date = start_date.replace(month=start_date.month+1, day=1) - timedelta(days=1)
+		except ValueError: end_date = start_date.replace(year=start_date.year+1, month=1, day=1) - timedelta(days=1)
+		label = f"Current Month ({today.strftime('%b %Y')})"
+		
+	return start_date, end_date, label
+
+def get_comparison_stats(user_expenses, start_date, end_date, current_total):
+	"""Evaluates explicitly identical previous duration natively predicting offset % changes securely."""
+	duration = (end_date - start_date).days + 1
+	prev_end_date = start_date - timedelta(days=1)
+	prev_start_date = prev_end_date - timedelta(days=duration - 1)
+	
+	prev_expenses = user_expenses.filter(date__gte=prev_start_date, date__lte=prev_end_date)
+	prev_total = prev_expenses.aggregate(total=Sum('amount'))['total'] or 0
+	
+	if prev_total > 0:
+		diff = current_total - prev_total
+		percentage = (diff / prev_total) * 100
+		if diff > 0: return f"Increased by {percentage:.1f}% vs previous period", "danger", "up"
+		elif diff < 0: return f"Decreased by {abs(percentage):.1f}% vs previous period", "success", "down"
+		else: return "No change vs previous period", "secondary", "dash"
+	else:
+		if current_total > 0: return "100% higher than previous period", "danger", "up"
+		return "No data in previous period", "secondary", "dash"
 
 def is_regular_user(user):
 	"""Check if user is a regular user (not admin/staff)."""
@@ -76,9 +136,20 @@ def dashboard(request):
 	today = date.today()
 	user_expenses = Expense.objects.filter(user=request.user)
 
-	month_expenses = user_expenses.filter(date__year=today.year, date__month=today.month)
+	# Phase N: Time Filter System Integration safely
+	range_type = request.GET.get('range', 'current')
+	start_str = request.GET.get('start_date')
+	end_str = request.GET.get('end_date')
+	
+	start_date, end_date, current_month_label = get_date_range(range_type, start_str, end_str)
+
+	# Execute strict constraints globally replacing all former naive '.year .month' metrics.
+	month_expenses = user_expenses.filter(date__gte=start_date, date__lte=end_date)
 	total_month = month_expenses.aggregate(total=Sum('amount'))['total'] or 0
 	count_month = month_expenses.count()
+
+	# Execute Comparison evaluation safely
+	comp_text, comp_color, comp_icon = get_comparison_stats(user_expenses, start_date, end_date, total_month)
 
 	category_summary_qs = (
 		month_expenses.values('category').annotate(total=Sum('amount')).order_by('category')
@@ -87,8 +158,7 @@ def dashboard(request):
 	category_values = [float(row['total']) for row in category_summary_qs]
 
 	trend_qs = (
-		user_expenses.filter(date__year=today.year)
-		.annotate(m=TruncMonth('date'))
+		month_expenses.annotate(m=TruncMonth('date', tzinfo=None))
 		.values('m')
 		.annotate(total=Sum('amount'))
 		.order_by('m')
@@ -96,8 +166,8 @@ def dashboard(request):
 	trend_labels = [f"{month_name[row['m'].month]}" for row in trend_qs]
 	trend_values = [float(row['total']) for row in trend_qs]
 
-	# Current month display (e.g., "January 2026")
-	current_month = f"{month_name[today.month]} {today.year}"
+	# Current month display via string identifier 
+	current_month = current_month_label
 	
 	# Phase 2: Smart Financial Suggestions
 	smart_suggestions = generate_suggestions(request.user)
@@ -115,6 +185,12 @@ def dashboard(request):
 		'trend_values': trend_values,
 		'smart_suggestions': smart_suggestions,
 		'next_month_prediction': next_month_prediction,
+		'current_range': range_type,
+		'start_date': start_str or '',
+		'end_date': end_str or '',
+		'comparison_text': comp_text,
+		'comparison_color': comp_color,
+		'comparison_icon': comp_icon,
 	}
 	return render(request, 'dashboard.html', context)
 
@@ -259,8 +335,14 @@ def download_expenses_csv(request):
 	if request.user.is_staff or request.user.is_superuser:
 		return redirect('admin_dashboard')
 		
-	# Single-user isolation
-	expenses = Expense.objects.filter(user=request.user).order_by('-date', '-id')
+	# Filtering
+	range_type = request.GET.get('range', 'current')
+	start_str = request.GET.get('start_date')
+	end_str = request.GET.get('end_date')
+	start_date, end_date, _ = get_date_range(range_type, start_str, end_str)
+
+	# Single-user isolation securely constrained	
+	expenses = Expense.objects.filter(user=request.user, date__gte=start_date, date__lte=end_date).order_by('-date', '-id')
 	
 	current_date = date.today().strftime('%Y-%m-%d')
 	filename = f"expenses_{request.user.username}_{current_date}.csv"
@@ -288,8 +370,14 @@ def download_expenses_pdf(request):
 	if request.user.is_staff or request.user.is_superuser:
 		return redirect('admin_dashboard')
 		
-	# Single-user isolation
-	expenses = Expense.objects.filter(user=request.user).order_by('-date', '-id')
+	# Filtering
+	range_type = request.GET.get('range', 'current')
+	start_str = request.GET.get('start_date')
+	end_str = request.GET.get('end_date')
+	start_date, end_date, label = get_date_range(range_type, start_str, end_str)
+
+	# Single-user isolation securely constrained
+	expenses = Expense.objects.filter(user=request.user, date__gte=start_date, date__lte=end_date).order_by('-date', '-id')
 	
 	current_date = date.today().strftime('%Y-%m-%d')
 	filename = f"expenses_{request.user.username}_{current_date}.pdf"
@@ -305,7 +393,10 @@ def download_expenses_pdf(request):
 	title = Paragraph(f"Expense Report - {request.user.username}", styles['Title'])
 	elements.append(title)
 	
-	date_p = Paragraph(f"Generated on: {current_date}", styles['Normal'])
+	filter_context = Paragraph(f"Period: {label}", styles['Normal'])
+	elements.append(filter_context)
+	
+	date_p = Paragraph(f"Report Generated: {current_date}", styles['Normal'])
 	elements.append(date_p)
 	elements.append(Spacer(1, 12))
 	

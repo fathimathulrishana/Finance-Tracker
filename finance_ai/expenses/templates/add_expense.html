@@ -14,10 +14,12 @@
         {% if is_edit %}Modify Expense{% else %}Record Expense{% endif %}
       </p>
       <h1 class="fw-bold mb-2">{% if is_edit %}Edit Expense{% else %}Add New Expense{% endif %}</h1>
-      <p class="text-muted mb-0">{% if is_edit %}Update your expense details{% else %}Quickly record your daily spending{% endif %}</p>
+      <p class="text-muted mb-0">{% if is_edit %}Update your expense details{% else %}Quickly record your daily
+        spending{% endif %}</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Expenses</a>
+      <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to
+        Expenses</a>
     </div>
   </div>
 
@@ -27,19 +29,26 @@
        ======================================== -->
   <style>
     /* Card styling */
-    .form-card { border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .form-card .card-body { padding: 2.5rem; }
-    
+    .form-card {
+      border: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-card .card-body {
+      padding: 2.5rem;
+    }
+
     /* Form field styling */
     .form-control:focus {
       border-color: #0d6efd;
       box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
     }
+
     .form-select:focus {
       border-color: #0d6efd;
       box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
     }
-    
+
     /* Input labels */
     .form-label {
       font-weight: 600;
@@ -49,20 +58,20 @@
       align-items: center;
       gap: 0.5rem;
     }
-    
+
     /* Required field indicator */
     .required-indicator {
       color: #dc3545;
       font-weight: bold;
     }
-    
+
     /* Helper text */
     .form-text {
       font-size: 0.85rem;
       color: #6c757d;
       margin-top: 0.4rem;
     }
-    
+
     /* Error styling */
     .error-message {
       color: #dc3545;
@@ -72,7 +81,7 @@
       align-items: center;
       gap: 0.4rem;
     }
-    
+
     /* Button styling */
     .btn-submit {
       padding: 0.7rem 1.5rem;
@@ -80,19 +89,21 @@
       letter-spacing: 0.02em;
       transition: all 0.2s ease;
     }
+
     .btn-submit:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
     }
-    
+
     /* Form section separator */
     .form-section {
       margin-bottom: 2rem;
     }
+
     .form-section:last-of-type {
       margin-bottom: 0;
     }
-    
+
     /* Icon styling in form */
     .form-label i {
       color: #0d6efd;
@@ -126,10 +137,10 @@
                 {{ form.category }}
               </div>
               {% if form.category.errors %}
-                <div class="error-message">
-                  <i class="bi bi-exclamation-circle"></i>
-                  <span>{{ form.category.errors.0 }}</span>
-                </div>
+              <div class="error-message">
+                <i class="bi bi-exclamation-circle"></i>
+                <span>{{ form.category.errors.0 }}</span>
+              </div>
               {% endif %}
               <small class="form-text">Select the category that best describes this expense</small>
             </div>
@@ -147,10 +158,10 @@
                 {{ form.amount }}
               </div>
               {% if form.amount.errors %}
-                <div class="error-message">
-                  <i class="bi bi-exclamation-circle"></i>
-                  <span>{{ form.amount.errors.0 }}</span>
-                </div>
+              <div class="error-message">
+                <i class="bi bi-exclamation-circle"></i>
+                <span>{{ form.amount.errors.0 }}</span>
+              </div>
               {% endif %}
               <small class="form-text">Enter the expense amount </small>
             </div>
@@ -165,12 +176,30 @@
               </label>
               {{ form.description }}
               {% if form.description.errors %}
-                <div class="error-message">
-                  <i class="bi bi-exclamation-circle"></i>
-                  <span>{{ form.description.errors.0 }}</span>
-                </div>
+              <div class="error-message">
+                <i class="bi bi-exclamation-circle"></i>
+                <span>{{ form.description.errors.0 }}</span>
+              </div>
               {% endif %}
               <small class="form-text">Add notes about this expense (e.g., where, why, etc.)</small>
+            </div>
+
+            <!-- ========================================
+                 FORM SECTION 3.5: DATE
+                 ======================================== -->
+            <div class="form-section">
+              <label for="{{ form.date.id_for_label }}" class="form-label">
+                <i class="bi bi-calendar-event"></i> Expense Date
+                <span style="font-size: 0.75rem; color: #6c757d; font-weight: normal;">(Optional)</span>
+              </label>
+              {{ form.date }}
+              {% if form.date.errors %}
+              <div class="error-message">
+                <i class="bi bi-exclamation-circle"></i>
+                <span>{{ form.date.errors.0 }}</span>
+              </div>
+              {% endif %}
+              <small class="form-text">Defaults to today if left blank</small>
             </div>
 
             <!-- ========================================
@@ -179,7 +208,7 @@
                  ======================================== -->
             <div class="d-grid gap-2 d-sm-flex pt-3 border-top">
               <button class="btn btn-primary btn-submit flex-grow-1" type="submit">
-                <i class="bi bi-check-circle"></i> 
+                <i class="bi bi-check-circle"></i>
                 {% if is_edit %}Update Expense{% else %}Save Expense{% endif %}
               </button>
               <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary btn-submit">
@@ -194,7 +223,8 @@
            HELPFUL TIP
            Additional context for users
            ======================================== -->
-      <div class="alert alert-info alert-dismissible fade show mt-4" role="alert" style="border: 1px solid rgba(13, 110, 253, 0.2); background-color: rgba(13, 110, 253, 0.05);">
+      <div class="alert alert-info alert-dismissible fade show mt-4" role="alert"
+        style="border: 1px solid rgba(13, 110, 253, 0.2); background-color: rgba(13, 110, 253, 0.05);">
         <i class="bi bi-lightbulb me-2" style="color: #0d6efd;"></i>
         <strong>Tip:</strong> Save your expense immediately for accurate tracking. You can always edit it later.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>

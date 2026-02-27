@@ -15,7 +15,13 @@ class Expense(models.Model):
 	category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
 	amount = models.FloatField()
 	description = models.TextField(blank=True)
-	date = models.DateField(auto_now_add=True)
+	from datetime import date as dt_date
+	date = models.DateField(default=dt_date.today)
+	
+	# Phase-2 Smart Features Tracking
+	is_anomaly = models.BooleanField(default=False)
+	is_auto_categorized = models.BooleanField(default=False)
+	is_ml_predicted = models.BooleanField(default=False)
 
 	class Meta:
 		ordering = ['-date', '-id']

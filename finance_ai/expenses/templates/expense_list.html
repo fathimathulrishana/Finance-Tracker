@@ -45,18 +45,38 @@
           <tr>
             <td><small class="text-muted">{{ e.date }}</small></td>
             <td>
-              <span class="badge {% if e.category == 'Food' %}bg-danger{% elif e.category == 'Travel' %}bg-info{% elif e.category == 'Shopping' %}bg-warning text-dark{% elif e.category == 'Bills' %}bg-danger{% else %}bg-secondary{% endif %}">
-                <i class="bi bi-{% if e.category == 'Food' %}cup-hot{% elif e.category == 'Travel' %}car-front{% elif e.category == 'Shopping' %}bag{% elif e.category == 'Bills' %}credit-card{% else %}tag{% endif %}"></i>
+              <span
+                class="badge {% if e.category == 'Food' %}bg-danger{% elif e.category == 'Travel' %}bg-info{% elif e.category == 'Shopping' %}bg-warning text-dark{% elif e.category == 'Bills' %}bg-danger{% else %}bg-secondary{% endif %}">
+                <i
+                  class="bi bi-{% if e.category == 'Food' %}cup-hot{% elif e.category == 'Travel' %}car-front{% elif e.category == 'Shopping' %}bag{% elif e.category == 'Bills' %}credit-card{% else %}tag{% endif %}"></i>
                 {{ e.category }}
               </span>
+              {% if e.is_auto_categorized %}
+              {% if e.is_ml_predicted %}
+              <span class="badge bg-purple text-white ms-1" style="background-color: #6f42c1; font-size: 0.65rem;"
+                title="Predicted by Machine Learning Model"><i class="bi bi-cpu"></i> ML Predicted</span>
+              {% else %}
+              <span class="badge bg-success bg-opacity-75 ms-1" style="font-size: 0.65rem;"
+                title="Rule Based category"><i class="bi bi-magic"></i> Rule Based</span>
+              {% endif %}
+              {% endif %}
             </td>
-            <td class="text-end fw-600">₹{{ e.amount|floatformat:2 }}</td>
+            <td class="text-end fw-600">
+              ₹{{ e.amount|floatformat:2 }}
+              {% if e.is_anomaly %}
+              <br><span class="badge bg-danger mt-1" style="font-size: 0.65rem;"><i
+                  class="bi bi-exclamation-triangle"></i> Unusual</span>
+              {% endif %}
+            </td>
             <td><small>{{ e.description|truncatewords:10 }}</small></td>
             <td class="text-end">
-              <a class="btn btn-sm btn-outline-primary" href="/expenses/{{ e.id }}/edit/" title="Edit"><i class="bi bi-pencil"></i></a>
+              <a class="btn btn-sm btn-outline-primary" href="/expenses/{{ e.id }}/edit/" title="Edit"><i
+                  class="bi bi-pencil"></i></a>
               <form action="/expenses/{{ e.id }}/delete/" method="post" class="d-inline" title="Delete">
                 {% csrf_token %}
-                <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this expense?')" type="submit"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Are you sure you want to delete this expense?')" type="submit"><i
+                    class="bi bi-trash"></i></button>
               </form>
             </td>
           </tr>

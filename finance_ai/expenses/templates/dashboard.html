@@ -25,25 +25,59 @@
        ======================================== -->
   <style>
     /* Spotlight gradient cards */
-    .card-spotlight { border: none; color: #fff; }
-    .card-spotlight .icon { font-size: 1.8rem; }
-    
+    .card-spotlight {
+      border: none;
+      color: #fff;
+    }
+
+    .card-spotlight .icon {
+      font-size: 1.8rem;
+    }
+
     /* Gradient backgrounds matching Admin Dashboard */
-    .bg-sky { background: linear-gradient(135deg, #0d6efd 0%, #4dabf7 100%); }
-    .bg-emerald { background: linear-gradient(135deg, #16a34a 0%, #3bc47c 100%); }
-    .bg-amber { background: linear-gradient(135deg, #f59e0b 0%, #f8b84e 100%); }
-    .bg-indigo { background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%); }
-    
+    .bg-sky {
+      background: linear-gradient(135deg, #0d6efd 0%, #4dabf7 100%);
+    }
+
+    .bg-emerald {
+      background: linear-gradient(135deg, #16a34a 0%, #3bc47c 100%);
+    }
+
+    .bg-amber {
+      background: linear-gradient(135deg, #f59e0b 0%, #f8b84e 100%);
+    }
+
+    .bg-indigo {
+      background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    }
+
     /* Hover effect for interactive cards */
-    .card-hover { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
-    
+    .card-hover {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    }
+
     /* Typography */
-    .metric-label { letter-spacing: 0.03em; font-size: 0.85rem; text-transform: uppercase; }
-    
+    .metric-label {
+      letter-spacing: 0.03em;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+
     /* Empty state styling */
-    .empty-state { padding: 3rem 2rem; text-align: center; }
-    .empty-state .icon { font-size: 4rem; opacity: 0.2; }
+    .empty-state {
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .empty-state .icon {
+      font-size: 4rem;
+      opacity: 0.2;
+    }
   </style>
 
   <!-- ========================================
@@ -85,7 +119,13 @@
         <div class="card-body d-flex align-items-center justify-content-between">
           <div>
             <p class="metric-label mb-1 text-white-50">Average Expense</p>
-            <h3 class="fw-bold mb-0">₹{% if count_month > 0 %}{% widthratio total_month count_month 1 %}{% else %}0{% endif %}</h3>
+            <h3 class="fw-bold mb-0">
+              ₹{% if count_month > 0 %}
+              {% widthratio total_month count_month 1 %}
+              {% else %}
+              0
+              {% endif %}
+            </h3>
             <small class="text-white-50">Per transaction</small>
           </div>
           <i class="bi bi-graph-up icon text-white-50"></i>
@@ -103,6 +143,41 @@
             <small class="text-white-50">Active tracking</small>
           </div>
           <i class="bi bi-calendar2-check icon text-white-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       PHASE 4: NEXT MONTH PREDICTION
+       Outputs the LSTM model's prediction
+       ======================================== -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm" style="border-left: 4px solid #0dcaf0 !important;">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center">
+              <div class="bg-info text-dark rounded p-2 me-3 d-flex align-items-center justify-content-center"
+                style="width: 40px; height: 40px;">
+                <i class="bi bi-robot fs-5"></i>
+              </div>
+              <div>
+                <h5 class="card-title mb-0 fw-bold">Next Month Prediction</h5>
+                <small class="text-muted">AI Forecast based on your historical spending</small>
+              </div>
+            </div>
+
+            <div class="text-end">
+              {% if next_month_prediction is not None %}
+              <h3 class="fw-bold mb-0 text-info">₹{{ next_month_prediction|floatformat:2 }}</h3>
+              <span class="badge bg-info text-dark mt-1"><i class="bi bi-graph-up-arrow"></i> Predicted</span>
+              {% else %}
+              <p class="text-muted mb-0 fw-semibold">Not enough data for prediction</p>
+              <small class="text-muted" style="font-size: 0.7rem;">(Requires at least 3 months of history)</small>
+              {% endif %}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -135,13 +210,51 @@
       </a>
     </div>
 
-    <!-- Shortcut 3: Download Reports (Placeholder for Phase-1) -->
+    <!-- Shortcut 3: Download Reports (Functional Phase) -->
     <div class="col-sm-6 col-lg-4">
-      <div class="card card-hover h-100" style="opacity: 0.6; cursor: not-allowed;">
-        <div class="card-body text-center">
-          <i class="bi bi-download" style="font-size: 2rem; color: #f59e0b;"></i>
-          <p class="fw-semibold mt-2 mb-1">Download Reports</p>
-          <small class="text-muted">CSV & PDF exports</small>
+      <div class="card card-hover h-100">
+        <div class="card-body text-center d-flex flex-column justify-content-center">
+          <p class="fw-semibold mb-2"><i class="bi bi-download"
+              style="color: #f59e0b; font-size: 1.5rem; margin-right: 0.5rem"></i> Download Reports</p>
+          <div class="d-flex justify-content-center gap-2 mt-2">
+            <a href="{% url 'download_csv' %}" class="btn btn-sm btn-outline-success"><i class="bi bi-filetype-csv"></i>
+              CSV</a>
+            <a href="{% url 'download_pdf' %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-filetype-pdf"></i>
+              PDF</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SMART INSIGHTS (PHASE-2)
+       AI-driven financial suggestions
+       ======================================== -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm" style="border-left: 4px solid #6f42c1 !important;">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="bg-purple text-white rounded p-2 me-3 d-flex align-items-center justify-content-center"
+              style="background-color: #6f42c1; width: 40px; height: 40px;">
+              <i class="bi bi-lightbulb-fill fs-5"></i>
+            </div>
+            <div>
+              <h5 class="card-title mb-0 fw-bold">Smart Insights</h5>
+              <small class="text-muted">Personalized financial advice based on your spending</small>
+            </div>
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for suggestion in smart_suggestions %}
+            <li class="list-group-item bg-transparent px-0 border-light border-opacity-25 pb-2">
+              <i class="bi bi-stars text-warning me-2"></i> <strong>{{ suggestion }}</strong>
+            </li>
+            {% empty %}
+            <li class="list-group-item bg-transparent px-0 text-muted">No insights available right now. Keep logging
+              expenses!</li>
+            {% endfor %}
+          </ul>
         </div>
       </div>
     </div>
@@ -165,7 +278,8 @@
             <span class="badge text-bg-primary">This Month</span>
           </div>
           <canvas id="pieChart" height="240" aria-label="Category distribution"></canvas>
-          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Identify your top spending categories to manage your budget better.</p>
+          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Identify your top spending categories to
+            manage your budget better.</p>
         </div>
       </div>
     </div>
@@ -182,13 +296,14 @@
             <span class="badge text-bg-success">12 Months</span>
           </div>
           <canvas id="lineChart" height="240" aria-label="Monthly trend"></canvas>
-          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Track your spending patterns and identify months with unusual expenses.</p>
+          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Track your spending patterns and identify
+            months with unusual expenses.</p>
         </div>
       </div>
     </div>
   </div>
   {% else %}
-  
+
   <!-- ========================================
        EMPTY STATE
        Displayed when user has no expenses
@@ -218,40 +333,40 @@
 <script>
   // Only render charts if data exists
   {% if count_month > 0 %}
-  
+
   // PIE CHART: Category-wise expense breakdown
   const pieCtx = document.getElementById('pieChart');
   const pieChart = new Chart(pieCtx, {
     type: 'pie',
     data: {
-      labels: {{ category_labels|safe }},
-      datasets: [{
-        data: {{ category_values|safe }},
-        backgroundColor: [
-          '#0d6efd',  // Blue
-          '#16a34a',  // Green
-          '#f59e0b',  // Amber
-          '#dc3545',  // Red
-          '#6366f1',  // Indigo
-          '#20c997'   // Teal
-        ],
-        borderWidth: 2,
-        borderColor: '#fff'
+      labels: {{ category_labels| safe }},
+  datasets: [{
+    data: {{ category_values| safe }},
+    backgroundColor: [
+    '#0d6efd',  // Blue
+    '#16a34a',  // Green
+    '#f59e0b',  // Amber
+    '#dc3545',  // Red
+    '#6366f1',  // Indigo
+    '#20c997'   // Teal
+  ],
+    borderWidth: 2,
+    borderColor: '#fff'
       }]
     },
-    options: { 
-      responsive: true,
+  options: {
+    responsive: true,
       maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          position: 'bottom',
+        plugins: {
+      legend: {
+        position: 'bottom',
           labels: {
-            padding: 15,
+          padding: 15,
             font: { size: 12 }
-          }
         }
       }
     }
+  }
   });
 
   // LINE CHART: Monthly expense trend
@@ -259,48 +374,47 @@
   const lineChart = new Chart(lineCtx, {
     type: 'line',
     data: {
-      labels: {{ trend_labels|safe }},
-      datasets: [{
-        label: 'Monthly Expenses',
-        data: {{ trend_values|safe }},
-        borderColor: '#0d6efd',
-        backgroundColor: 'rgba(13, 110, 253, 0.1)',
-        fill: true,
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: '#0d6efd',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2
+      labels: {{ trend_labels| safe }},
+  datasets: [{
+    label: 'Monthly Expenses',
+    data: {{ trend_values| safe }},
+    borderColor: '#0d6efd',
+    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+    fill: true,
+    tension: 0.3,
+    borderWidth: 2,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    pointBackgroundColor: '#0d6efd',
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2
       }]
     },
-    options: { 
-      responsive: true,
+  options: {
+    responsive: true,
       maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          display: true,
+        plugins: {
+      legend: {
+        display: true,
           position: 'bottom',
-          labels: {
-            padding: 15,
+            labels: {
+          padding: 15,
             font: { size: 12 }
-          }
         }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
           ticks: {
-            callback: function(value) {
-              return '₹' + value;
-            }
+          callback: function(value) {
+            return '₹' + value;
           }
         }
       }
     }
+  }
   });
-  
   {% endif %}
 </script>
 {% endblock %}

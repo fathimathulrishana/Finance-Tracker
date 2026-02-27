@@ -18,11 +18,19 @@ class RegisterForm(UserCreationForm):
             field.widget.attrs['class'] = (css + ' form-control').strip()
 
 
+from datetime import date as dt_date
+from django.core.exceptions import ValidationError
+
 class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
-        fields = ("category", "amount", "description")
+        fields = ("date", "category", "amount", "description")
         widgets = {
+            "date": forms.DateInput(attrs={
+                "type": "date",
+                "class": "form-control",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
             "category": forms.Select(attrs={
                 "class": "form-select",
                 "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
@@ -42,6 +50,19 @@ class ExpenseForm(forms.ModelForm):
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add an empty choice for Phase 2 Auto Categorization
+        choices = [('', '--- Auto Detect ---')] + list(self.fields['category'].choices)
+        self.fields['category'].choices = choices
+        self.fields['category'].required = False
+        
+    def clean_date(self):
+        """Prevent users from selecting future dates."""
+        selected_date = self.cleaned_data.get('date')
+        if selected_date and selected_date > dt_date.today():
+            raise ValidationError("Future dates are not allowed.")
+        return selected_date
 
 class MonthFilterForm(forms.Form):
     month = forms.DateField(

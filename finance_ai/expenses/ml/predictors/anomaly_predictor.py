@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from expenses.ml.model_loader import ml_engine
 
 def detect_anomaly(amount: float, user_expenses: list = None) -> bool:

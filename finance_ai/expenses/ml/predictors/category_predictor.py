@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from expenses.ml.model_loader import ml_engine
 from expenses.ml.keyword_engine import apply_keyword_rules, clean_text
 

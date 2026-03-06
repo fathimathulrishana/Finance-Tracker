@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 {% block title %}Expenses | Finance Tracker{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -61,8 +62,8 @@
               {% endif %}
               {% endif %}
             </td>
-            <td class="text-end fw-600">
-              ₹{{ e.amount|floatformat:2 }}
+            <td class="text-end fw-600 text-truncate" style="max-width: 150px;">
+              ₹{{ e.amount|floatformat:2|intcomma }}
               {% if e.is_anomaly %}
               <br><span class="badge bg-danger mt-1" style="font-size: 0.65rem;"><i
                   class="bi bi-exclamation-triangle"></i> Unusual</span>

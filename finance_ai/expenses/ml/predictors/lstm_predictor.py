@@ -76,7 +76,9 @@ def predict_next_month(user) -> float | None:
         
         # Prepare deterministic SMA fallback
         fallback_values = values[-WINDOW_SIZE:] if values else []
-        fallback_avg = sum(fallback_values) / len(fallback_values) if fallback_values else None
+        fallback_avg = round(sum(fallback_values) / len(fallback_values), 2) if fallback_values else None
+        if fallback_avg and fallback_avg > 1000000:
+            fallback_avg = 1000000.00
             
         if not lstm_engine.model or not lstm_engine.scaler:
             print("Model/Scaler missing, bypassing explicitly to SMA fallback.")
@@ -112,7 +114,8 @@ def predict_next_month(user) -> float | None:
             
         # Inverse transform result back implicitly to monetary figures
         predicted_value = lstm_engine.scaler.inverse_transform(prediction_scaled)[0][0]
-        predicted_value = max(0.0, float(predicted_value))
+        predicted_value = min(1000000.00, max(0.0, float(predicted_value)))
+        predicted_value = round(predicted_value, 2)
         
         print("7. Inverse transformed value:", predicted_value)
         return predicted_value

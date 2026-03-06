@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Income | Finance Tracker{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="mb-1"><i class="bi bi-wallet-fill"></i> Income</h2>
+    <p class="text-muted mb-0">Track and manage all your income sources in one place.</p>
+  </div>
+  <a class="btn btn-primary fw-600" href="{% url 'add_income' %}"><i class="bi bi-plus-circle"></i> Add Income</a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-600">Filter by Month</label>
+        {{ form.month }}
+      </div>
+      <div class="col-md-auto">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-funnel"></i> Filter</button>
+        <a class="btn btn-outline-secondary" href="{% url 'income_list' %}"><i class="bi bi-arrow-clockwise"></i>
+          Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-white border-bottom">
+    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Income Records</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Source</th>
+            <th class="text-end">Amount</th>
+            <th>Description</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in incomes %}
+          <tr>
+            <td><small class="text-muted">{{ i.date }}</small></td>
+            <td>
+              <span class="badge bg-success">
+                <i class="bi bi-box-arrow-in-right"></i> {{ i.source }}
+              </span>
+            </td>
+            <td class="text-end fw-600 text-truncate" style="max-width: 150px; color: #16a34a;">
+              ₹{{ i.amount|floatformat:2|intcomma }}
+            </td>
+            <td><small>{{ i.description|truncatewords:10 }}</small></td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="/income/{{ i.id }}/edit/" title="Edit"><i
+                  class="bi bi-pencil"></i></a>
+              <form action="/income/{{ i.id }}/delete/" method="post" class="d-inline" title="Delete">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Are you sure you want to delete this income?')" type="submit"><i
+                    class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center py-5">
+              <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+              <p class="text-muted mt-3">No income found. <a href="{% url 'add_income' %}">Add your first income</a></p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

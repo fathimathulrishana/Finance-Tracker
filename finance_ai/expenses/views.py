@@ -1,6 +1,7 @@
 import csv
 from datetime import date, timedelta, datetime
 from calendar import month_name
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import login, authenticate
@@ -16,8 +17,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-from .forms import ExpenseForm, MonthFilterForm, RegisterForm
-from .models import Expense
+from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm
+from .models import Expense, Income
 from .utils.smart_features import categorize_expense, detect_anomaly as rule_based_anomaly, generate_suggestions
 from expenses.ml.predictors.lstm_predictor import predict_next_month
 from expenses.ml.predictors.category_predictor import predict_category
@@ -135,6 +136,7 @@ def dashboard(request):
 	
 	today = date.today()
 	user_expenses = Expense.objects.filter(user=request.user)
+	user_incomes = Income.objects.filter(user=request.user)
 
 	# Phase N: Time Filter System Integration safely
 	range_type = request.GET.get('range', 'current')
@@ -145,11 +147,36 @@ def dashboard(request):
 
 	# Execute strict constraints globally replacing all former naive '.year .month' metrics.
 	month_expenses = user_expenses.filter(date__gte=start_date, date__lte=end_date)
-	total_month = month_expenses.aggregate(total=Sum('amount'))['total'] or 0
+	total_month = month_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 	count_month = month_expenses.count()
+
+	month_incomes = user_incomes.filter(date__gte=start_date, date__lte=end_date)
+	monthly_income = month_incomes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+	all_time_expense = user_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	all_time_income = user_incomes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	total_balance = all_time_income - all_time_expense
+
+	savings = monthly_income - total_month
+
+	if monthly_income > 0:
+		savings_rate = (savings / monthly_income) * 100
+	else:
+		savings_rate = 0
+
+	if savings_rate >= 70:
+		health_score = "Excellent"
+		health_color = "success"
+	elif savings_rate >= 40:
+		health_score = "Good"
+		health_color = "warning"
+	else:
+		health_score = "Poor"
+		health_color = "danger"
 
 	# Execute Comparison evaluation safely
 	comp_text, comp_color, comp_icon = get_comparison_stats(user_expenses, start_date, end_date, total_month)
+	comp_text_inc, comp_color_inc, comp_icon_inc = get_comparison_stats(user_incomes, start_date, end_date, monthly_income)
 
 	category_summary_qs = (
 		month_expenses.values('category').annotate(total=Sum('amount')).order_by('category')
@@ -163,8 +190,29 @@ def dashboard(request):
 		.annotate(total=Sum('amount'))
 		.order_by('m')
 	)
-	trend_labels = [f"{month_name[row['m'].month]}" for row in trend_qs]
-	trend_values = [float(row['total']) for row in trend_qs]
+	income_trend_qs = (
+		month_incomes.annotate(m=TruncMonth('date', tzinfo=None))
+		.values('m')
+		.annotate(total=Sum('amount'))
+		.order_by('m')
+	)
+
+	trend_dict = {}
+	for row in trend_qs:
+		month_key = f"{month_name[row['m'].month]} {row['m'].year}"
+		trend_dict[month_key] = {'expense': float(row['total']), 'income': 0.0, 'm': row['m']}
+
+	for row in income_trend_qs:
+		month_key = f"{month_name[row['m'].month]} {row['m'].year}"
+		if month_key not in trend_dict:
+			trend_dict[month_key] = {'expense': 0.0, 'income': float(row['total']), 'm': row['m']}
+		else:
+			trend_dict[month_key]['income'] = float(row['total'])
+
+	sorted_months = sorted(trend_dict.values(), key=lambda x: x['m'])
+	trend_labels = [f"{month_name[row['m'].month]}" for row in sorted_months]
+	trend_values = [row['expense'] for row in sorted_months]
+	income_trend_values = [row['income'] for row in sorted_months]
 
 	# Current month display via string identifier 
 	current_month = current_month_label
@@ -178,11 +226,18 @@ def dashboard(request):
 	context = {
 		'total_month': total_month,
 		'count_month': count_month,
+		'monthly_income': monthly_income,
+		'total_balance': total_balance,
+		'savings': savings,
+		'savings_rate': round(savings_rate, 1),
+		'health_score': health_score,
+		'health_color': health_color,
 		'current_month': current_month,
 		'category_labels': category_labels,
 		'category_values': category_values,
 		'trend_labels': trend_labels,
 		'trend_values': trend_values,
+		'income_trend_values': income_trend_values,
 		'smart_suggestions': smart_suggestions,
 		'next_month_prediction': next_month_prediction,
 		'current_range': range_type,
@@ -191,6 +246,9 @@ def dashboard(request):
 		'comparison_text': comp_text,
 		'comparison_color': comp_color,
 		'comparison_icon': comp_icon,
+		'comparison_text_inc': comp_text_inc,
+		'comparison_color_inc': comp_color_inc,
+		'comparison_icon_inc': comp_icon_inc,
 	}
 	return render(request, 'dashboard.html', context)
 
@@ -327,6 +385,76 @@ def delete_expense(request, pk: int):
 		messages.success(request, 'Expense deleted successfully!')
 		return redirect('expense_list')
 	return render(request, 'confirm_delete.html', {'expense': expense})
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def income_list(request):
+	"""User income list - restricted to regular users only."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+	
+	form = MonthFilterForm(request.GET or None)
+	qs = Income.objects.filter(user=request.user)
+
+	selected_month = None
+	if form.is_valid() and form.cleaned_data.get('month'):
+		selected_month = form.cleaned_data['month']
+		qs = qs.filter(date__year=selected_month.year, date__month=selected_month.month)
+
+	context = {
+		'incomes': qs.order_by('-date', '-id'),
+		'form': form,
+		'selected_month': selected_month,
+	}
+	return render(request, 'income_list.html', context)
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def add_income(request):
+	"""Add income view - restricted to regular users only."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+	
+	if request.method == 'POST':
+		form = IncomeForm(request.POST)
+		if form.is_valid():
+			income = form.save(commit=False)
+			income.user = request.user
+			income.save()
+			messages.success(request, 'Income added successfully!')
+			return redirect('income_list')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = IncomeForm()
+	return render(request, 'add_income.html', {'form': form})
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def edit_income(request, pk: int):
+	income = get_object_or_404(Income, pk=pk, user=request.user)
+	if request.method == 'POST':
+		form = IncomeForm(request.POST, instance=income)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Income updated successfully!')
+			return redirect('income_list')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = IncomeForm(instance=income)
+	return render(request, 'add_income.html', {'form': form, 'is_edit': True})
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def delete_income(request, pk: int):
+	income = get_object_or_404(Income, pk=pk, user=request.user)
+	if request.method == 'POST':
+		income.delete()
+		messages.success(request, 'Income deleted successfully!')
+		return redirect('income_list')
+	# We can reuse confirm_delete template by returning an object named 'object' or 'item', but currently it relies on 'expense'. 
+	# I will pass 'expense' for text matching in template, or I can create a new delete template.
+	# Actually, I'll update confirm_delete.html to be generic if needed, but let's just pass 'income' and fix the template context.
+	return render(request, 'confirm_delete_income.html', {'income': income})
 
 @login_required
 @user_passes_test(is_regular_user, redirect_field_name=None)

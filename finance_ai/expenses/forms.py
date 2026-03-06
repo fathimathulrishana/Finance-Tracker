@@ -39,7 +39,8 @@ class ExpenseForm(forms.ModelForm):
                 "class": "form-control",
                 "step": "0.01",
                 "placeholder": "0.00",
-                "min": "0",
+                "min": "0.01",
+                "max": "1000000.00",
                 "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
             }),
             "description": forms.Textarea(attrs={
@@ -64,9 +65,65 @@ class ExpenseForm(forms.ModelForm):
             raise ValidationError("Future dates are not allowed.")
         return selected_date
 
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is None:
+            raise ValidationError("Amount is required.")
+        if amount <= 0:
+            raise ValidationError("Expense amount must be greater than zero.")
+        if amount > 1000000:
+            raise ValidationError("Expense amount cannot exceed ₹10,00,000.")
+        return amount
+
 class MonthFilterForm(forms.Form):
     month = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={"type": "month", "class": "form-control"}),
         help_text="Filter by month",
     )
+
+class IncomeForm(forms.ModelForm):
+    from .models import Income
+    class Meta:
+        from .models import Income
+        model = Income
+        fields = ("date", "source", "amount", "description")
+        widgets = {
+            "date": forms.DateInput(attrs={
+                "type": "date",
+                "class": "form-control",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "source": forms.Select(attrs={
+                "class": "form-select",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "amount": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "placeholder": "0.00",
+                "min": "0.01",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "e.g., Monthly Salary",
+                "style": "min-height: 90px; padding: 0.6rem 0.75rem;"
+            }),
+        }
+
+    def clean_date(self):
+        selected_date = self.cleaned_data.get('date')
+        if selected_date and selected_date > dt_date.today():
+            raise ValidationError("Future dates are not allowed.")
+        return selected_date
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is None:
+            raise ValidationError("Amount is required.")
+        if amount <= 0:
+            raise ValidationError("Income amount must be greater than zero.")
+        return amount
+

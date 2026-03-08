@@ -159,6 +159,45 @@ def dashboard(request):
 
 	savings = monthly_income - total_month
 
+	# MONTH-TO-MONTH COMPARISON
+	duration = (end_date - start_date).days + 1
+	prev_end_date = start_date - timedelta(days=1)
+	prev_start_date = prev_end_date - timedelta(days=duration - 1)
+
+	prev_month_expenses = user_expenses.filter(date__gte=prev_start_date, date__lte=prev_end_date)
+	prev_monthly_expense = prev_month_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+	prev_month_incomes = user_incomes.filter(date__gte=prev_start_date, date__lte=prev_end_date)
+	prev_monthly_income = prev_month_incomes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+	prev_all_time_expense = user_expenses.filter(date__lte=prev_end_date).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	prev_all_time_income = user_incomes.filter(date__lte=prev_end_date).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	prev_total_balance = prev_all_time_income - prev_all_time_expense
+
+	prev_savings = prev_monthly_income - prev_monthly_expense
+
+	def get_percent_and_icon(current, previous):
+		if previous:
+			pct = ((current - previous) / previous) * 100
+		else:
+			pct = Decimal('100.00') if current > 0 else Decimal('0.00')
+		
+		# Display: Green ↑ if increase, Red ↓ if decrease
+		if pct > 0:
+			icon = "bi bi-arrow-up text-success"
+		elif pct < 0:
+			icon = "bi bi-arrow-down text-danger"
+		else:
+			icon = "bi bi-dash text-secondary"
+			
+		return abs(pct), icon
+
+	balance_change_percent, balance_trend_icon = get_percent_and_icon(total_balance, prev_total_balance)
+	income_change_percent, income_trend_icon = get_percent_and_icon(monthly_income, prev_monthly_income)
+	expense_change_percent, expense_trend_icon = get_percent_and_icon(total_month, prev_monthly_expense)
+	savings_change_percent, savings_trend_icon = get_percent_and_icon(savings, prev_savings)
+	monthly_expenses = total_month
+
 	if monthly_income > 0:
 		savings_rate = (savings / monthly_income) * 100
 	else:
@@ -227,8 +266,17 @@ def dashboard(request):
 		'total_month': total_month,
 		'count_month': count_month,
 		'monthly_income': monthly_income,
+		'monthly_expenses': monthly_expenses,
 		'total_balance': total_balance,
 		'savings': savings,
+		'balance_change_percent': balance_change_percent,
+		'income_change_percent': income_change_percent,
+		'expense_change_percent': expense_change_percent,
+		'savings_change_percent': savings_change_percent,
+		'balance_trend_icon': balance_trend_icon,
+		'income_trend_icon': income_trend_icon,
+		'expense_trend_icon': expense_trend_icon,
+		'savings_trend_icon': savings_trend_icon,
 		'savings_rate': round(savings_rate, 1),
 		'health_score': health_score,
 		'health_color': health_color,

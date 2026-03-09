@@ -68,3 +68,32 @@ class Income(models.Model):
 
     def __str__(self):
         return f"{self.user.username} | {self.source}: {self.amount} on {self.date}"
+
+class SavingGoal(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saving_goals')
+    title = models.CharField(max_length=100)
+    target_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    saved_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    deadline = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-deadline', '-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} | {self.title}: {self.saved_amount}/{self.target_amount}"
+
+    @property
+    def progress(self):
+        if self.target_amount > 0:
+            return round((self.saved_amount / self.target_amount) * 100, 1)
+        return 0.0

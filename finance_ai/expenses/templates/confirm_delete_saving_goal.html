@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Delete Saving Goal | Finance Tracker{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0" style="border-radius: 12px; border-top: 4px solid #dc3545 !important;">
+            <div class="card-body p-4 text-center">
+                <div class="mb-4">
+                    <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center"
+                        style="width: 80px; height: 80px;">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+
+                <h4 class="card-title fw-bold text-danger mb-3">Delete Saving Goal?</h4>
+                <p class="text-muted mb-4">
+                    Are you sure you want to delete the saving goal for <strong>"{{ goal.title }}"</strong>?<br>
+                    This action cannot be undone.
+                </p>
+
+                <form method="post" class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    {% csrf_token %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-light px-4">Cancel</a>
+                    <button type="submit" class="btn btn-danger px-4 shadow-sm">
+                        <i class="bi bi-trash"></i> Delete Goal
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

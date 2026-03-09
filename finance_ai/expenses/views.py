@@ -17,12 +17,14 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm
-from .models import Expense, Income
+from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm, SavingGoalForm
+from .models import Expense, Income, SavingGoal
 from .utils.smart_features import categorize_expense, detect_anomaly as rule_based_anomaly, generate_suggestions
 from expenses.ml.predictors.lstm_predictor import predict_next_month
 from expenses.ml.predictors.category_predictor import predict_category
 from expenses.ml.predictors.anomaly_predictor import detect_anomaly as ml_anomaly
+from expenses.services.insight_engine import generate_insights
+
 
 def get_date_range(range_type, start_str=None, end_str=None):
 	"""Returns safe start_date, end_date, and textual label given a range_type identifier."""
@@ -262,6 +264,10 @@ def dashboard(request):
 	# Phase 4: Next Month LSTM Expense Prediction
 	next_month_prediction = predict_next_month(request.user)
 
+	# Phase 5: Saving Goals and AI Insights
+	saving_goals = SavingGoal.objects.filter(user=request.user)
+	insights = generate_insights(request.user, start_date=start_date, end_date=end_date)
+
 	context = {
 		'total_month': total_month,
 		'count_month': count_month,
@@ -297,6 +303,8 @@ def dashboard(request):
 		'comparison_text_inc': comp_text_inc,
 		'comparison_color_inc': comp_color_inc,
 		'comparison_icon_inc': comp_icon_inc,
+		'saving_goals': saving_goals,
+		'insights': insights,
 	}
 	return render(request, 'dashboard.html', context)
 
@@ -611,3 +619,47 @@ def download_expenses_pdf(request):
 	doc.build(elements)
 	
 	return response
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def add_saving_goal(request):
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+		
+	if request.method == 'POST':
+		form = SavingGoalForm(request.POST)
+		if form.is_valid():
+			goal = form.save(commit=False)
+			goal.user = request.user
+			goal.save()
+			messages.success(request, 'Saving Goal created successfully!')
+			return redirect('dashboard')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = SavingGoalForm()
+	return render(request, 'add_saving_goal.html', {'form': form})
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def edit_saving_goal(request, pk: int):
+	goal = get_object_or_404(SavingGoal, pk=pk, user=request.user)
+	if request.method == 'POST':
+		form = SavingGoalForm(request.POST, instance=goal)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Saving Goal updated successfully!')
+			return redirect('dashboard')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = SavingGoalForm(instance=goal)
+	return render(request, 'add_saving_goal.html', {'form': form, 'is_edit': True})
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def delete_saving_goal(request, pk: int):
+	goal = get_object_or_404(SavingGoal, pk=pk, user=request.user)
+	if request.method == 'POST':
+		goal.delete()
+		messages.success(request, 'Saving Goal deleted successfully!')
+		return redirect('dashboard')
+	return render(request, 'confirm_delete_saving_goal.html', {'goal': goal})

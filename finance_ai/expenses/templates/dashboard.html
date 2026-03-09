@@ -426,33 +426,122 @@
   </div>
 
   <!-- ========================================
-       SMART INSIGHTS (PHASE-2)
-       AI-driven financial suggestions
+       AI INSIGHTS & SAVING GOALS (PHASE-2 & 5)
+       Intelligent recommendations and goal tracking
        ======================================== -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm" style="border-left: 4px solid #6f42c1 !important;">
-        <div class="card-body">
+  <div class="row g-3 mb-4">
+    <!-- AI Insights Panel -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #6f42c1 !important;">
+        <div class="card-body d-flex flex-column">
           <div class="d-flex align-items-center mb-3">
             <div class="bg-purple text-white rounded p-2 me-3 d-flex align-items-center justify-content-center"
               style="background-color: #6f42c1; width: 40px; height: 40px;">
               <i class="bi bi-lightbulb-fill fs-5"></i>
             </div>
             <div>
-              <h5 class="card-title mb-0 fw-bold">Smart Insights</h5>
-              <small class="text-muted">Personalized financial advice based on your spending</small>
+              <h5 class="card-title mb-0 fw-bold">AI Insights</h5>
+              <small class="text-muted">Smart analysis of your spending</small>
             </div>
           </div>
-          <ul class="list-group list-group-flush">
-            {% for suggestion in smart_suggestions %}
-            <li class="list-group-item bg-transparent px-0 border-light border-opacity-25 pb-2">
-              <i class="bi bi-stars text-warning me-2"></i> <strong>{{ suggestion }}</strong>
-            </li>
+
+          <div class="flex-grow-1 overflow-auto" style="max-height: 280px; padding-right: 5px;">
+            <ul class="list-group list-group-flush">
+              {% for insight in insights %}
+              <li class="list-group-item bg-transparent px-0 border-light border-opacity-25 py-3">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="mt-1">
+                    {% if insight.type == 'success' %}
+                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                    {% elif insight.type == 'warning' %}
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                    {% else %}
+                    <i class="bi bi-info-circle-fill text-info fs-5"></i>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <h6 class="fw-bold mb-1">{{ insight.title }}</h6>
+                    <p class="mb-0 text-muted small">{{ insight.message }}</p>
+                  </div>
+                </div>
+              </li>
+              {% empty %}
+              <li class="list-group-item bg-transparent px-0 text-muted py-3 text-center">
+                <i class="bi bi-inbox fs-4 d-block mb-2 opacity-50"></i>
+                No new insights available right now. Keep logging your expenses!
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saving Goals Panel -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #20c997 !important;">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center">
+              <div class="bg-teal text-white rounded p-2 me-3 d-flex align-items-center justify-content-center"
+                style="background-color: #20c997; width: 40px; height: 40px;">
+                <i class="bi bi-bullseye fs-5"></i>
+              </div>
+              <div>
+                <h5 class="card-title mb-0 fw-bold">Saving Goals</h5>
+                <small class="text-muted">Track your targets</small>
+              </div>
+            </div>
+            <a href="{% url 'add_saving_goal' %}" class="btn btn-sm btn-outline-success">
+              <i class="bi bi-plus-lg"></i> Add Goal
+            </a>
+          </div>
+
+          <div class="flex-grow-1 overflow-auto" style="max-height: 280px; padding-right: 5px;">
+            {% for goal in saving_goals %}
+            <div class="mb-4 bg-light p-3 rounded-3 position-relative group-hover">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <h6 class="fw-bold mb-0 text-dark">{{ goal.title }}</h6>
+                <div class="d-flex gap-2">
+                  <a href="{% url 'edit_saving_goal' goal.id %}" class="text-secondary" title="Edit Goal"><i
+                      class="bi bi-pencil-square"></i></a>
+                  <a href="{% url 'delete_saving_goal' goal.id %}" class="text-danger" title="Delete Goal"><i
+                      class="bi bi-trash"></i></a>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between text-muted small mb-2">
+                <span>Saved: ₹{{ goal.saved_amount|floatformat:0|intcomma }}</span>
+                <span>Target: ₹{{ goal.target_amount|floatformat:0|intcomma }}</span>
+              </div>
+
+              <div class="progress" style="height: 10px;" role="progressbar" aria-label="{{ goal.title }} progress"
+                aria-valuenow="{{ goal.progress }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar {% if goal.progress >= 100 %}bg-success{% else %}bg-primary{% endif %}"
+                  style="width: {% if goal.progress > 100 %}100{% else %}{{ goal.progress }}{% endif %}%;"></div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center mt-2 small">
+                <span class="text-muted">
+                  {% if goal.deadline %}
+                  <i class="bi bi-calendar-event"></i> By {{ goal.deadline|date:"M d, Y" }}
+                  {% else %}
+                  <i class="bi bi-calendar-minus"></i> No deadline
+                  {% endif %}
+                </span>
+                <span class="fw-bold {% if goal.progress >= 100 %}text-success{% else %}text-primary{% endif %}">
+                  {{ goal.progress }}%
+                </span>
+              </div>
+            </div>
             {% empty %}
-            <li class="list-group-item bg-transparent px-0 text-muted">No insights available right now. Keep logging
-              expenses!</li>
+            <div class="text-center text-muted py-4">
+              <i class="bi bi-bullseye fs-1 d-block mb-3 opacity-25"></i>
+              <p class="mb-1">You haven't set any saving goals yet.</p>
+              <p class="small">Setting goals helps you track your progress over time.</p>
+            </div>
             {% endfor %}
-          </ul>
+          </div>
         </div>
       </div>
     </div>

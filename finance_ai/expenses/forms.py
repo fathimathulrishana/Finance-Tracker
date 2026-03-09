@@ -127,3 +127,67 @@ class IncomeForm(forms.ModelForm):
             raise ValidationError("Income amount must be greater than zero.")
         return amount
 
+class SavingGoalForm(forms.ModelForm):
+    from .models import SavingGoal
+    class Meta:
+        from .models import SavingGoal
+        model = SavingGoal
+        fields = ("title", "target_amount", "saved_amount", "deadline")
+        widgets = {
+            "title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "e.g., Buy Laptop",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "target_amount": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "placeholder": "0.00",
+                "min": "0.01",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "saved_amount": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "placeholder": "0.00",
+                "min": "0.00",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+            "deadline": forms.DateInput(attrs={
+                "type": "date",
+                "class": "form-control",
+                "style": "min-height: 42px; padding: 0.6rem 0.75rem;"
+            }),
+        }
+
+    def clean_target_amount(self):
+        amount = self.cleaned_data.get('target_amount')
+        if amount is None:
+            raise ValidationError("Target amount is required.")
+        if amount <= 0:
+            raise ValidationError("Target amount must be greater than zero.")
+        return amount
+
+    def clean_saved_amount(self):
+        amount = self.cleaned_data.get('saved_amount')
+        if amount is None:
+            return 0
+        if amount < 0:
+            raise ValidationError("Saved amount cannot be negative.")
+        return amount
+
+    def clean(self):
+        cleaned_data = super().clean()
+        target_amount = cleaned_data.get('target_amount')
+        saved_amount = cleaned_data.get('saved_amount')
+
+        if target_amount is not None and saved_amount is not None:
+            if saved_amount > target_amount:
+                raise ValidationError("Saved amount cannot exceed target amount.")
+
+        deadline = cleaned_data.get('deadline')
+        if deadline and deadline <= dt_date.today():
+             raise ValidationError("Deadline must be a future date.")
+
+        return cleaned_data
+

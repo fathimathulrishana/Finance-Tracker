@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_edit %}Edit Saving Goal{% else %}Add Saving Goal{% endif %} | Finance Tracker{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+            <h2 class="h4 mb-0 fw-bold">{% if is_edit %}Edit Saving Goal{% else %}New Saving Goal{% endif %}</h2>
+        </div>
+
+        <div class="card shadow-sm border-0" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label fw-semibold">Goal Title</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>
+                        {% endif %}
+                        <div class="form-text">What are you saving for?</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label for="{{ form.target_amount.id_for_label }}" class="form-label fw-semibold">Target
+                                Amount (₹)</label>
+                            {{ form.target_amount }}
+                            {% if form.target_amount.errors %}
+                            <div class="text-danger small mt-1">{{ form.target_amount.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="{{ form.saved_amount.id_for_label }}" class="form-label fw-semibold">Already
+                                Saved (₹)</label>
+                            {{ form.saved_amount }}
+                            {% if form.saved_amount.errors %}
+                            <div class="text-danger small mt-1">{{ form.saved_amount.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.deadline.id_for_label }}" class="form-label fw-semibold">Target Deadline
+                            <span class="text-muted fw-normal">(Optional)</span></label>
+                        {{ form.deadline }}
+                        {% if form.deadline.errors %}
+                        <div class="text-danger small mt-1">{{ form.deadline.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4 pt-2 border-top">
+                        <button type="submit" class="btn btn-primary py-2 fw-semibold shadow-sm">
+                            <i class="bi bi-save2"></i> {% if is_edit %}Update Goal{% else %}Save Goal{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -35,7 +35,7 @@ class LSTMPredictorEngine:
         
         try:
             if load_model and os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH):
-                self.model = load_model(MODEL_PATH)
+                self.model = load_model(MODEL_PATH, compile=False)
                 self.scaler = joblib.load(SCALER_PATH)
                 print("[LSTM Engine] Successfully loaded model and scaler globally.")
             else:

@@ -17,7 +17,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm, SavingGoalForm
+from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm, SavingGoalForm, DepositForm
 from .models import Expense, Income, SavingGoal
 from .utils.smart_features import categorize_expense, detect_anomaly as rule_based_anomaly, generate_suggestions
 from expenses.ml.predictors.lstm_predictor import predict_next_month
@@ -663,3 +663,50 @@ def delete_saving_goal(request, pk: int):
 		messages.success(request, 'Saving Goal deleted successfully!')
 		return redirect('dashboard')
 	return render(request, 'confirm_delete_saving_goal.html', {'goal': goal})
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def deposit_saving_goal(request, pk: int):
+	"""Handle deposits to a saving goal and deduct from available savings."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+		
+	goal = get_object_or_404(SavingGoal, pk=pk, user=request.user)
+	
+	# Calculate user's available savings
+	user_expenses = Expense.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	user_incomes = Income.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	available_savings = user_incomes - user_expenses
+	
+	if request.method == 'POST':
+		form = DepositForm(request.POST)
+		if form.is_valid():
+			deposit_amount = Decimal(str(form.cleaned_data['amount']))
+			
+			if deposit_amount > available_savings:
+				messages.error(request, f'Insufficient savings! You only have ₹{available_savings:.2f} available to deposit.')
+			else:
+				# 1. Add amount to saving goal
+				goal.saved_amount += deposit_amount
+				goal.save()
+				
+				# 2. Prevent double counting: Deduct from total balance by creating an Expense 
+				Expense.objects.create(
+					user=request.user,
+					category='Others',
+					amount=deposit_amount,
+					description=f"Transferred to Saving Goal: {goal.title}"
+				)
+				
+				messages.success(request, f'Successfully deposited ₹{deposit_amount} to {goal.title}!')
+				return redirect('dashboard')
+		else:
+			messages.error(request, 'Please correct the errors below.')
+	else:
+		form = DepositForm()
+		
+	return render(request, 'deposit_saving_goal.html', {
+		'form': form,
+		'goal': goal,
+		'available_savings': available_savings
+	})

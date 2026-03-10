@@ -191,3 +191,16 @@ class SavingGoalForm(forms.ModelForm):
 
         return cleaned_data
 
+class DepositForm(forms.Form):
+    amount = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            "class": "form-control form-control-lg",
+            "step": "0.01",
+            "placeholder": "0.00",
+            "min": "0.01",
+        }),
+        label="Deposit Amount (₹)"
+    )

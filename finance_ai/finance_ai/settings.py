@@ -22,14 +22,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-_$z2qw*n4mbexh#80u+32quwu38csy+^$a)j88%vuyf!lv%r)f'
-SECRET_KEY = 'django-insecure-CHANGE_ME'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-DEBUG = True
 
 ALLOWED_HOSTS = []
-ALLOWED_HOSTS: list[str] = []
 
 
 # Application definition
@@ -127,10 +124,5 @@ STATIC_ROOT = BASE_DIR / '.static_root'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

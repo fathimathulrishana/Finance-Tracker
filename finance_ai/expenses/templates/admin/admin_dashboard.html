@@ -10,23 +10,57 @@
       <p class="text-muted mb-0">System-wide analytics, user management, and expense oversight.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'admin_manage_users' %}" class="btn btn-outline-primary"><i class="bi bi-people"></i> Manage Users</a>
-      <a href="{% url 'admin_manage_expenses' %}" class="btn btn-outline-secondary"><i class="bi bi-wallet2"></i> Manage Expenses</a>
+      <a href="{% url 'admin_manage_users' %}" class="btn btn-outline-primary"><i class="bi bi-people"></i> Manage
+        Users</a>
       <a href="{% url 'admin_reports' %}" class="btn btn-primary"><i class="bi bi-file-earmark-pdf"></i> Reports</a>
     </div>
   </div>
 
   <style>
-    .card-spotlight { border: none; color: #fff; }
-    .card-spotlight .icon { font-size: 1.8rem; }
-    .bg-sky { background: linear-gradient(135deg, #0d6efd 0%, #4dabf7 100%); }
-    .bg-emerald { background: linear-gradient(135deg, #16a34a 0%, #3bc47c 100%); }
-    .bg-amber { background: linear-gradient(135deg, #f59e0b 0%, #f8b84e 100%); }
-    .bg-indigo { background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%); }
-    .card-hover { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
-    .metric-label { letter-spacing: 0.03em; font-size: 0.85rem; text-transform: uppercase; }
-    .coming-soon-badge { font-size: 0.75rem; letter-spacing: 0.05em; }
+    .card-spotlight {
+      border: none;
+      color: #fff;
+    }
+
+    .card-spotlight .icon {
+      font-size: 1.8rem;
+    }
+
+    .bg-sky {
+      background: linear-gradient(135deg, #0d6efd 0%, #4dabf7 100%);
+    }
+
+    .bg-emerald {
+      background: linear-gradient(135deg, #16a34a 0%, #3bc47c 100%);
+    }
+
+    .bg-amber {
+      background: linear-gradient(135deg, #f59e0b 0%, #f8b84e 100%);
+    }
+
+    .bg-indigo {
+      background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    }
+
+    .card-hover {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .metric-label {
+      letter-spacing: 0.03em;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+
+    .coming-soon-badge {
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
   </style>
 
   <!-- System Metrics Cards (4 columns) -->
@@ -84,9 +118,10 @@
     </div>
   </div>
 
-  <!-- Admin Actions Cards (3 perfectly balanced cards) -->
+
+  <!-- Admin Actions Cards (2 balanced cards) -->
   <div class="row g-3 mb-4">
-    <div class="col-md-6 col-lg-4">
+    <div class="col-md-6">
       <a href="{% url 'admin_manage_users' %}" class="card card-hover text-decoration-none h-100">
         <div class="card-body text-center">
           <i class="bi bi-people" style="font-size: 2rem; color: #0d6efd;"></i>
@@ -95,16 +130,7 @@
         </div>
       </a>
     </div>
-    <div class="col-md-6 col-lg-4">
-      <a href="{% url 'admin_manage_expenses' %}" class="card card-hover text-decoration-none h-100">
-        <div class="card-body text-center">
-          <i class="bi bi-wallet2" style="font-size: 2rem; color: #16a34a;"></i>
-          <p class="fw-semibold mt-2 mb-1">Manage Expenses</p>
-          <small class="text-muted">Review and filter transactions</small>
-        </div>
-      </a>
-    </div>
-    <div class="col-md-6 col-lg-4">
+    <div class="col-md-6">
       <a href="{% url 'admin_reports' %}" class="card card-hover text-decoration-none h-100">
         <div class="card-body text-center">
           <i class="bi bi-file-earmark-pdf" style="font-size: 2rem; color: #f59e0b;"></i>
@@ -128,7 +154,8 @@
             <span class="badge text-bg-info">System-wide</span>
           </div>
           <canvas id="categoryChart" height="240" aria-label="Category distribution"></canvas>
-          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Shows which expense categories dominate across all users. Use to understand platform trends.</p>
+          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Shows which expense categories dominate across
+            all users. Use to understand platform trends.</p>
         </div>
       </div>
     </div>
@@ -144,7 +171,8 @@
             <span class="badge text-bg-success">Live Data</span>
           </div>
           <canvas id="trendChart" height="240" aria-label="Monthly trend"></canvas>
-          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Tracks platform expense volume over time. Identify seasonality and growth patterns.</p>
+          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Tracks platform expense volume over time.
+            Identify seasonality and growth patterns.</p>
         </div>
       </div>
     </div>
@@ -160,7 +188,7 @@
               <h5 class="card-title mb-0"><i class="bi bi-clock-history"></i> Recent System Activity</h5>
               <small class="text-muted">Last 10 expenses across all users</small>
             </div>
-            <a href="{% url 'admin_manage_expenses' %}" class="btn btn-sm btn-outline-primary">View All Expenses</a>
+            <span class="badge text-bg-secondary">Last 10 records</span>
           </div>
 
           {% if recent_expenses %}

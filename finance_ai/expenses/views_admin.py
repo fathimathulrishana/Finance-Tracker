@@ -1,7 +1,6 @@
 """
 Admin views for Phase-1
 - User management
-- Expense management
 - Analytics dashboard
 - Report generation
 """
@@ -140,45 +139,6 @@ def manage_users(request):
     context = {'users': users}
     return render(request, 'admin/manage_users.html', context)
 
-
-@user_passes_test(is_admin, redirect_field_name=None)
-def manage_expenses(request):
-    """Manage all expenses - view, filter, delete."""
-    # Extra safety check: redirect non-admin users
-    if not (request.user.is_staff and request.user.is_superuser):
-        return redirect('dashboard')
-    
-    expenses = Expense.objects.select_related('user').order_by('-date')
-    
-    # Filter by month
-    selected_month = request.GET.get('month')
-    if selected_month:
-        year, month = selected_month.split('-')
-        expenses = expenses.filter(date__year=int(year), date__month=int(month))
-    
-    # Filter by category
-    selected_category = request.GET.get('category')
-    if selected_category:
-        expenses = expenses.filter(category=selected_category)
-    
-    # Delete expense
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'delete':
-            expense_id = request.POST.get('expense_id')
-            expense = get_object_or_404(Expense, id=expense_id)
-            expense.delete()
-            messages.success(request, "Expense deleted.")
-            return redirect('admin_manage_expenses')
-    
-    categories = Expense.CATEGORY_CHOICES
-    context = {
-        'expenses': expenses,
-        'categories': categories,
-        'selected_month': selected_month,
-        'selected_category': selected_category,
-    }
-    return render(request, 'admin/manage_expenses.html', context)
 
 
 @user_passes_test(is_admin, redirect_field_name=None)

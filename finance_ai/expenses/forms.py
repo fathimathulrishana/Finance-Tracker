@@ -199,8 +199,9 @@ class DepositForm(forms.Form):
         widget=forms.NumberInput(attrs={
             "class": "form-control form-control-lg",
             "step": "0.01",
-            "placeholder": "0.00",
+            "placeholder": "e.g. 500",
             "min": "0.01",
+            "autofocus": True,
         }),
-        label="Deposit Amount (₹)"
+        label=""
     )

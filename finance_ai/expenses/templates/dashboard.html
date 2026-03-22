@@ -203,6 +203,83 @@
       line-height: 1.4;
       text-align: left;
     }
+
+    /* ── Saving Goal Item Cards ── */
+    .goal-item-card {
+      background: #fff;
+      border: 1px solid #f0f0f0;
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .goal-item-card:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+      transform: translateY(-2px);
+    }
+
+    /* ── Goal Action Icon Buttons ── */
+    .goal-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      text-decoration: none;
+      transition: all 0.18s ease;
+    }
+
+    .goal-action-deposit {
+      background: rgba(25, 135, 84, 0.1);
+      color: #198754;
+    }
+
+    .goal-action-deposit:hover {
+      background: #198754;
+      color: #fff;
+    }
+
+    .goal-action-edit {
+      background: rgba(108, 117, 125, 0.1);
+      color: #6c757d;
+    }
+
+    .goal-action-edit:hover {
+      background: #6c757d;
+      color: #fff;
+    }
+
+    .goal-action-delete {
+      background: rgba(220, 53, 69, 0.1);
+      color: #dc3545;
+    }
+
+    .goal-action-delete:hover {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    /* ── Goal Progress Bar ── */
+    .goal-progress-track {
+      background: #e9ecef;
+      border-radius: 50px;
+      height: 7px;
+      overflow: hidden;
+    }
+
+    .goal-progress-fill-dash {
+      height: 100%;
+      border-radius: 50px;
+      background: linear-gradient(90deg, #0d6efd, #60a5fa);
+      transition: width 0.6s ease;
+    }
+
+    .goal-progress-fill-dash.done {
+      background: linear-gradient(90deg, #198754, #4ade80);
+    }
   </style>
 
   <div class="row g-3 mb-4">
@@ -294,7 +371,8 @@
           <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
               <p class="metric-label">Savings</p>
-              <h3 class="fw-bold mb-0 text-truncate mt-2 text-white">₹{{ savings|floatformat:2|intcomma }}</h3>
+              <h3 class="fw-bold mb-0 text-truncate mt-2 text-white">₹{{ available_savings|floatformat:2|intcomma }}
+              </h3>
             </div>
             <div class="icon-circle">
               <i class="bi bi-piggy-bank"></i>
@@ -499,39 +577,50 @@
 
           <div class="flex-grow-1 overflow-auto" style="max-height: 280px; padding-right: 5px;">
             {% for goal in saving_goals %}
-            <div class="mb-4 bg-light p-3 rounded-3 position-relative group-hover">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <h6 class="fw-bold mb-0 text-dark">{{ goal.title }}</h6>
-                <div class="d-flex gap-2">
-                  <a href="{% url 'deposit_saving_goal' goal.id %}" class="text-success" title="Deposit Money"><i
-                      class="bi bi-wallet2"></i></a>
-                  <a href="{% url 'edit_saving_goal' goal.id %}" class="text-secondary" title="Edit Goal"><i
-                      class="bi bi-pencil-square"></i></a>
-                  <a href="{% url 'delete_saving_goal' goal.id %}" class="text-danger" title="Delete Goal"><i
-                      class="bi bi-trash"></i></a>
+            <div class="goal-item-card mb-3">
+              <!-- Title + Action Icons -->
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.95rem;">{{ goal.title }}</h6>
+                  <small class="text-muted">
+                    {% if goal.deadline %}
+                    <i class="bi bi-calendar-event me-1"></i>By {{ goal.deadline|date:"M d, Y" }}
+                    {% else %}
+                    <i class="bi bi-infinity me-1"></i>No deadline
+                    {% endif %}
+                  </small>
+                </div>
+                <div class="d-flex gap-1">
+                  <a href="{% url 'deposit_saving_goal' goal.id %}" class="goal-action-btn goal-action-deposit"
+                    title="Deposit Money">
+                    <i class="bi bi-plus-lg"></i>
+                  </a>
+                  <a href="{% url 'edit_saving_goal' goal.id %}" class="goal-action-btn goal-action-edit"
+                    title="Edit Goal">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <a href="{% url 'delete_saving_goal' goal.id %}" class="goal-action-btn goal-action-delete"
+                    title="Delete Goal">
+                    <i class="bi bi-trash"></i>
+                  </a>
                 </div>
               </div>
 
-              <div class="d-flex justify-content-between text-muted small mb-2">
-                <span>Saved: ₹{{ goal.saved_amount|floatformat:0|intcomma }}</span>
-                <span>Target: ₹{{ goal.target_amount|floatformat:0|intcomma }}</span>
+              <!-- Amount Row -->
+              <div class="d-flex align-items-baseline gap-1 mb-2">
+                <span class="fw-bold text-success" style="font-size: 1.05rem;">₹{{ goal.saved_amount|floatformat:0|intcomma }}</span>
+                <span class="text-muted small">of</span>
+                <span class="fw-semibold text-muted" style="font-size: 0.92rem;">₹{{ goal.target_amount|floatformat:0|intcomma }}</span>
               </div>
 
-              <div class="progress" style="height: 10px;" role="progressbar" aria-label="{{ goal.title }} progress"
-                aria-valuenow="{{ goal.progress }}" aria-valuemin="0" aria-valuemax="100">
-                <div class="progress-bar {% if goal.progress >= 100 %}bg-success{% else %}bg-primary{% endif %}"
-                  style="width: {% if goal.progress > 100 %}100{% else %}{{ goal.progress }}{% endif %}%;"></div>
+              <!-- Progress Bar -->
+              <div class="goal-progress-track">
+                <div class="goal-progress-fill-dash {% if goal.progress >= 100 %}done{% endif %}"
+                  style="width: {% if goal.progress > 100 %}100{% else %}{{ goal.progress }}{% endif %}%;">
+                </div>
               </div>
-
-              <div class="d-flex justify-content-between align-items-center mt-2 small">
-                <span class="text-muted">
-                  {% if goal.deadline %}
-                  <i class="bi bi-calendar-event"></i> By {{ goal.deadline|date:"M d, Y" }}
-                  {% else %}
-                  <i class="bi bi-calendar-minus"></i> No deadline
-                  {% endif %}
-                </span>
-                <span class="fw-bold {% if goal.progress >= 100 %}text-success{% else %}text-primary{% endif %}">
+              <div class="text-end mt-1">
+                <span class="fw-bold small {% if goal.progress >= 100 %}text-success{% else %}text-primary{% endif %}">
                   {{ goal.progress }}%
                 </span>
               </div>
@@ -539,8 +628,11 @@
             {% empty %}
             <div class="text-center text-muted py-4">
               <i class="bi bi-bullseye fs-1 d-block mb-3 opacity-25"></i>
-              <p class="mb-1">You haven't set any saving goals yet.</p>
-              <p class="small">Setting goals helps you track your progress over time.</p>
+              <p class="fw-semibold mb-1">No saving goals yet</p>
+              <p class="small mb-3">Start setting goals to track your progress.</p>
+              <a href="{% url 'add_saving_goal' %}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                <i class="bi bi-plus-lg me-1"></i>Add Your First Goal
+              </a>
             </div>
             {% endfor %}
           </div>

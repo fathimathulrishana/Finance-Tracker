@@ -3,122 +3,377 @@
 {% block title %}Deposit Money | Finance Tracker{% endblock %}
 {% block content %}
 
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="d-flex align-items-center mb-4">
-            <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary me-3">
-                <i class="bi bi-arrow-left"></i> Back to Dashboard
-            </a>
-            <h2 class="h4 mb-0 fw-bold">Deposit Money</h2>
-        </div>
+<style>
+    /* ── Page Background ── */
+    .deposit-page {
+        min-height: 80vh;
+        padding: 2rem 0;
+    }
 
-        <!-- Goal Summary Card -->
-        <div class="card shadow-sm border-0 mb-4 bg-light" style="border-radius: 16px;">
-            <div class="card-body p-4 text-center">
-                <h5 class="fw-bold mb-3 text-dark">{{ goal.title }}</h5>
-                <div class="d-flex justify-content-center gap-4 mb-3">
-                    <div>
-                        <small class="text-muted d-block text-uppercase fw-bold" style="letter-spacing: 0.5px;">Current
-                            Saved</small>
-                        <span class="fs-4 fw-bold text-primary">₹{{ goal.saved_amount|floatformat:2|intcomma }}</span>
-                    </div>
-                    <div class="border-start"></div>
-                    <div>
-                        <small class="text-muted d-block text-uppercase fw-bold" style="letter-spacing: 0.5px;">Target
-                            Amount</small>
-                        <span class="fs-4 fw-bold text-dark">₹{{ goal.target_amount|floatformat:2|intcomma }}</span>
-                    </div>
-                </div>
+    /* ── Goal Summary Card ── */
+    .goal-summary-card {
+        background: linear-gradient(135deg, #1e3a5f 0%, #1a6b5a 100%);
+        border: none;
+        border-radius: 24px;
+        color: #fff;
+        box-shadow: 0 20px 60px rgba(30, 58, 95, 0.35);
+        overflow: hidden;
+        position: relative;
+    }
 
-                <div class="progress" style="height: 12px; border-radius: 6px;" role="progressbar"
-                    aria-label="Goal progress" aria-valuenow="{{ goal.progress }}" aria-valuemin="0"
-                    aria-valuemax="100">
-                    <div class="progress-bar {% if goal.progress >= 100 %}bg-success{% else %}bg-primary{% endif %} progress-bar-striped progress-bar-animated"
-                        style="width: {% if goal.progress > 100 %}100{% else %}{{ goal.progress }}{% endif %}%;">
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between mt-2 small">
-                    <span class="text-muted">Progress</span>
-                    <span class="fw-bold {% if goal.progress >= 100 %}text-success{% else %}text-primary{% endif %}">
-                        {{ goal.progress }}%
-                    </span>
+    .goal-summary-card::before {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+    }
+
+    .goal-summary-card::after {
+        content: '';
+        position: absolute;
+        bottom: -40px;
+        left: -40px;
+        width: 150px;
+        height: 150px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 50%;
+    }
+
+    .goal-title-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50px;
+        padding: 0.4rem 1.2rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.95);
+        letter-spacing: 0.5px;
+        margin-bottom: 1.5rem;
+    }
+
+    .amount-display {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.4rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .amount-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 600;
+    }
+
+    .amount-saved {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #5ef5c5;
+        line-height: 1;
+    }
+
+    .amount-divider {
+        font-size: 1.6rem;
+        color: rgba(255, 255, 255, 0.4);
+        margin: 0 0.25rem;
+    }
+
+    .amount-target {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1;
+    }
+
+    /* ── Progress Bar ── */
+    .goal-progress-wrap {
+        padding: 0 1rem;
+    }
+
+    .goal-progress-bar-bg {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50px;
+        height: 10px;
+        overflow: hidden;
+        margin-bottom: 0.6rem;
+    }
+
+    .goal-progress-fill {
+        height: 100%;
+        border-radius: 50px;
+        background: linear-gradient(90deg, #5ef5c5, #00c9a7);
+        transition: width 0.8s ease;
+        box-shadow: 0 0 10px rgba(94, 245, 197, 0.5);
+    }
+
+    .goal-progress-fill.complete {
+        background: linear-gradient(90deg, #ffd700, #ffaa00);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .progress-pct {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #5ef5c5;
+        text-align: right;
+    }
+
+    .progress-pct.complete {
+        color: #ffd700;
+    }
+
+    /* ── Form Card ── */
+    .deposit-form-card {
+        background: #fff;
+        border: none;
+        border-radius: 24px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    /* ── Available savings badge ── */
+    .savings-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        border: 1px solid #b8dfc4;
+        color: #155724;
+        border-radius: 50px;
+        padding: 0.55rem 1.4rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 12px rgba(21, 87, 36, 0.1);
+    }
+
+    .savings-badge i {
+        font-size: 1.1rem;
+    }
+
+    /* ── Amount Input ── */
+    .amount-input-group {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 2px 16px rgba(13, 110, 253, 0.1);
+        border: 2px solid #e9ecef;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .amount-input-group:focus-within {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 20px rgba(13, 110, 253, 0.2);
+    }
+
+    .amount-input-group .input-group-text {
+        background: #f8f9fa;
+        border: none;
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #0d6efd;
+        padding: 0 1.2rem;
+    }
+
+    .amount-input-group .form-control {
+        border: none;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #212529;
+        background: #f8f9fa;
+        text-align: center;
+        padding: 1rem 1.5rem;
+        box-shadow: none !important;
+    }
+
+    .amount-input-group .form-control:focus {
+        background: #fff;
+    }
+
+    .amount-input-group .input-group-text:focus+.form-control,
+    .amount-input-group:focus-within .input-group-text {
+        background: #fff;
+    }
+
+    /* ── Deposit Button ── */
+    .btn-deposit {
+        background: linear-gradient(135deg, #0d6efd, #0099cc);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: 0.75px;
+        text-transform: uppercase;
+        padding: 1rem 2rem;
+        border-radius: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 20px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-deposit:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(13, 110, 253, 0.45);
+        background: linear-gradient(135deg, #0b5ed7, #0088bb);
+        color: #fff;
+    }
+
+    .btn-deposit:active {
+        transform: translateY(0);
+    }
+
+    /* ── Back Button ── */
+    .btn-back {
+        background: rgba(108, 117, 125, 0.1);
+        border: 1px solid rgba(108, 117, 125, 0.2);
+        color: #6c757d;
+        border-radius: 10px;
+        font-weight: 500;
+        padding: 0.45rem 1.1rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-back:hover {
+        background: rgba(108, 117, 125, 0.18);
+        color: #495057;
+    }
+
+    /* ── Section divider ── */
+    .section-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #adb5bd;
+        margin-bottom: 1rem;
+    }
+
+    /* Remove number input arrows */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+</style>
+
+<div class="deposit-page">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6 col-xl-5">
+
+            <!-- ── Page Header ── -->
+            <div class="d-flex align-items-center mb-4 gap-3">
+                <a href="{% url 'dashboard' %}" class="btn btn-back">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+                <div>
+                    <h1 class="h4 fw-bold mb-0">Deposit Money</h1>
+                    <p class="text-muted small mb-0">Add funds to your saving goal</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Deposit Form Card -->
-        <div class="card shadow border-0" style="border-radius: 16px;">
-            <div class="card-body p-4">
-                <div class="text-center mb-4">
+            <!-- ── Goal Summary Card ── -->
+            <div class="goal-summary-card p-4 mb-4 text-center">
+                <div class="goal-title-badge">
+                    <i class="bi bi-bullseye"></i>
+                    {{ goal.title }}
+                </div>
+
+                <div class="amount-display">
+                    <div class="d-flex flex-column align-items-center me-2">
+                        <span class="amount-label mb-1">Saved</span>
+                        <span class="amount-saved">₹{{ goal.saved_amount|default:0|floatformat:0|intcomma }}</span>
+                    </div>
+                    <span class="amount-divider">/</span>
+                    <div class="d-flex flex-column align-items-center ms-2">
+                        <span class="amount-label mb-1">Target</span>
+                        <span class="amount-target">₹{{ goal.target_amount|default:0|floatformat:0|intcomma }}</span>
+                    </div>
+                </div>
+
+                <div class="goal-progress-wrap">
+                    <div class="goal-progress-bar-bg">
+                        <div class="goal-progress-fill {% if goal.progress >= 100 %}complete{% endif %}"
+                            style="width: {% if goal.progress > 100 %}100{% else %}{{ goal.progress }}{% endif %}%;">
+                        </div>
+                    </div>
+                    <div class="progress-pct {% if goal.progress >= 100 %}complete{% endif %}">
+                        {{ goal.progress }}% complete
+                    </div>
+                </div>
+
+                {% if goal.deadline %}
+                <div class="mt-3">
                     <span
-                        class="badge bg-{{ available_savings|yesno:'success,danger' }} text-white px-3 py-2 rounded-pill shadow-sm">
-                        <i class="bi bi-wallet-fill me-1"></i> Available Savings: ₹{{
-                        available_savings|floatformat:2|intcomma }}
+                        style="background: rgba(255,255,255,0.12); border-radius: 50px; padding: 0.3rem 1rem; font-size: 0.8rem; color: rgba(255,255,255,0.75);">
+                        <i class="bi bi-calendar-event me-1"></i> Deadline: {{ goal.deadline|date:"M d, Y" }}
                     </span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ── Deposit Form Card ── -->
+            <div class="deposit-form-card p-4 p-md-5">
+
+                <!-- Available Savings -->
+                <div class="text-center mb-4">
+                    <div class="savings-badge">
+                        <i class="bi bi-piggy-bank-fill text-success"></i>
+                        Available Savings: ₹{{ available_savings|default:0|floatformat:2|intcomma }}
+                    </div>
                 </div>
 
                 <form method="post" novalidate>
                     {% csrf_token %}
 
                     {% if form.non_field_errors %}
-                    <div class="alert alert-danger mb-4" role="alert">
-                        {% for error in form.non_field_errors %}
-                        {{ error }}
-                        {% endfor %}
+                    <div class="alert alert-danger mb-4 rounded-3 border-0 shadow-sm" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
                     </div>
                     {% endif %}
 
+                    <!-- Amount Input -->
                     <div class="mb-4 text-center">
-                        <label for="{{ form.amount.id_for_label }}" class="form-label text-muted fw-bold mb-3">{{
-                            form.amount.label }}</label>
-                        <div class="input-group input-group-lg mx-auto" style="max-width: 300px;">
-                            <span class="input-group-text bg-white border-end-0 fs-5">₹</span>
+                        <p class="section-label">Enter Deposit Amount</p>
+                        <div class="input-group input-group-lg amount-input-group mx-auto" style="max-width: 380px;">
+                            <span class="input-group-text">₹</span>
                             {{ form.amount }}
                         </div>
+                        <p class="text-muted small mt-2 mb-0">How much would you like to add to this goal?</p>
                         {% if form.amount.errors %}
-                        <div class="text-danger small mt-2">{{ form.amount.errors|join:", " }}</div>
+                        <div class="text-danger small mt-2 d-flex align-items-center justify-content-center gap-1">
+                            <i class="bi bi-exclamation-circle"></i>
+                            {{ form.amount.errors|join:", " }}
+                        </div>
                         {% endif %}
                     </div>
 
-                    <div class="d-grid gap-2 mt-4 pt-2">
-                        <button type="submit" class="btn btn-success btn-lg fw-semibold shadow-sm">
-                            <i class="bi bi-wallet2 me-2"></i> Add Money
+                    <!-- Submit Button -->
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-deposit">
+                            <i class="bi bi-wallet2 me-2"></i> Confirm Deposit
                         </button>
                     </div>
                 </form>
+
             </div>
+            <!-- end deposit-form-card -->
+
         </div>
     </div>
 </div>
-
-<style>
-    .form-control-lg {
-        font-size: 1.5rem;
-        font-weight: 600;
-        text-align: center;
-        border-left: none;
-    }
-
-    .form-control-lg:focus {
-        border-left: none;
-        box-shadow: none;
-        border-color: #dee2e6;
-    }
-
-    .input-group-text {
-        font-weight: bold;
-        color: #495057;
-    }
-
-    .input-group:focus-within {
-        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
-        border-radius: 0.5rem;
-    }
-
-    .input-group:focus-within .form-control,
-    .input-group:focus-within .input-group-text {
-        border-color: #198754;
-    }
-</style>
 
 {% endblock %}

@@ -268,6 +268,16 @@ def dashboard(request):
 	saving_goals = SavingGoal.objects.filter(user=request.user)
 	insights = generate_insights(request.user, start_date=start_date, end_date=end_date)
 
+	total_income = month_incomes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	total_expenses = month_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	
+	total_savings = total_income - total_expenses
+	goal_allocated = saving_goals.aggregate(total=Sum('saved_amount'))['total'] or Decimal('0.00')
+	
+	available_savings = total_savings - goal_allocated
+	if available_savings < Decimal('0.00'):
+		available_savings = Decimal('0.00')
+
 	context = {
 		'total_month': total_month,
 		'count_month': count_month,
@@ -275,6 +285,7 @@ def dashboard(request):
 		'monthly_expenses': monthly_expenses,
 		'total_balance': total_balance,
 		'savings': savings,
+		'available_savings': available_savings,
 		'balance_change_percent': balance_change_percent,
 		'income_change_percent': income_change_percent,
 		'expense_change_percent': expense_change_percent,

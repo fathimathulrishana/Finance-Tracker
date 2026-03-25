@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Expense
+from .models import Expense, Bill, Budget
 
 
 @admin.register(Expense)
@@ -15,3 +15,17 @@ class ExpenseAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             return qs
         return qs.filter(user=request.user)
+
+
+@admin.register(Bill)
+class BillAdmin(admin.ModelAdmin):
+    list_display = ('due_date', 'user', 'title', 'category', 'amount', 'is_paid')
+    list_filter = ('category', 'is_paid', 'due_date', 'user')
+    search_fields = ('user__username', 'title')
+
+
+@admin.register(Budget)
+class BudgetAdmin(admin.ModelAdmin):
+    list_display = ('user', 'category', 'monthly_budget', 'created_at')
+    list_filter = ('category', 'user')
+    search_fields = ('user__username', 'category')

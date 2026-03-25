@@ -22,4 +22,15 @@ urlpatterns = [
     path('saving-goals/<int:pk>/edit/', views.edit_saving_goal, name='edit_saving_goal'),
     path('saving-goals/<int:pk>/delete/', views.delete_saving_goal, name='delete_saving_goal'),
     path('saving-goals/deposit/<int:pk>/', views.deposit_saving_goal, name='deposit_saving_goal'),
+
+    # Upcoming Bills
+    path('bills/', views.bills_list, name='bills_list'),
+    path('bills/add/', views.add_bill, name='add_bill'),
+    path('bills/pay/<int:pk>/', views.mark_bill_paid, name='mark_bill_paid'),
+
+    # Budget Allocation
+    path('budget/', views.budget_dashboard, name='budget_dashboard'),
+    path('budget/add/', views.add_budget, name='add_budget'),
+    path('budget/<int:pk>/edit/', views.edit_budget, name='edit_budget'),
+    path('budget/<int:pk>/delete/', views.delete_budget, name='delete_budget'),
 ]

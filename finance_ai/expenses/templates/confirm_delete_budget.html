@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Delete Budget Category | Finance Tracker{% endblock %}
+{% block content %}
+
+<div class="container py-4" style="max-width: 560px;">
+  <style>
+    .card { border: none !important; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .card-body { padding: 2rem; }
+    .btn { padding: 0.55rem 1.4rem; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  </style>
+
+  <div class="card">
+    <div class="card-body text-center">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+        style="width:70px; height:70px; background:#fef2f2;">
+        <i class="bi bi-trash text-danger" style="font-size:2rem;"></i>
+      </div>
+      <h4 class="fw-bold mb-1">Remove Budget Category?</h4>
+      <p class="text-muted mb-0">You are about to remove the budget for:</p>
+      <div class="my-3 p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
+        <div class="fw-bold text-dark" style="font-size:1.1rem;">{{ budget.category }}</div>
+        <div class="text-muted small">Monthly limit: ₹{{ budget.monthly_budget }}</div>
+      </div>
+      <p class="text-muted small mb-4">This action is permanent. Your expense data will not be affected.</p>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="d-flex gap-2 justify-content-center">
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Yes, Remove It
+          </button>
+          <a href="{% url 'budget_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

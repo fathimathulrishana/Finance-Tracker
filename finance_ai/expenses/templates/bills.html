@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Upcoming Bills | Finance Tracker{% endblock %}
+{% block content %}
+
+<div class="container py-4">
+
+  <!-- ======================================== PAGE HEADER ======================================== -->
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="text-uppercase small text-muted mb-1"><i class="bi bi-calendar-check"></i> Bill Tracker</p>
+      <h1 class="fw-bold mb-1">Upcoming Bills</h1>
+      <p class="text-muted mb-0">Manage recurring payments and never miss a due date.</p>
+    </div>
+    <a href="{% url 'add_bill' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Add Bill</a>
+  </div>
+
+  <!-- ======================================== STYLES ======================================== -->
+  <style>
+    .card { border: none !important; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-body { padding: 1.5rem; }
+    .btn { padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .btn-sm { padding: 0.35rem 0.85rem; border-radius: 6px; }
+    .card-fintech { color: #fff; }
+    .card-fintech .icon-circle { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-fintech .icon-circle i { font-size: 1.5rem; color: #fff; }
+    .bg-gradient-red    { background: linear-gradient(135deg, #dc2626, #f87171); }
+    .bg-gradient-blue   { background: linear-gradient(135deg, #1e73ff, #60a5fa); }
+    .bg-gradient-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    .bg-gradient-purple { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .card-fintech:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+    .metric-label { letter-spacing: 1px; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; margin-bottom: 0; }
+
+    .bill-item { background: #fff; border: 1px solid #f1f5f9; border-radius: 14px; transition: all 0.2s ease; padding: 1rem 1.25rem; }
+    .bill-item:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); border-color: #e2e8f0; }
+    .bill-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.3rem; }
+    .bill-icon.rent         { background: rgba(30,115,255,0.1); color: #1e73ff; }
+    .bill-icon.utilities    { background: rgba(245,158,11,0.1); color: #f59e0b; }
+    .bill-icon.entertainment{ background: rgba(99,102,241,0.1); color: #6366f1; }
+    .bill-icon.subscriptions{ background: rgba(139,92,246,0.1); color: #8b5cf6; }
+    .bill-icon.transport    { background: rgba(20,184,166,0.1); color: #14b8a6; }
+    .bill-icon.insurance    { background: rgba(22,163,74,0.1);  color: #16a34a; }
+    .bill-icon.emi          { background: rgba(220,38,38,0.1);  color: #dc2626; }
+    .bill-icon.food         { background: rgba(251,146,60,0.1); color: #fb923c; }
+    .bill-icon.other        { background: rgba(100,116,139,0.1);color: #64748b; }
+
+    .badge-overdue { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.73rem; font-weight:600; padding:0.3rem 0.65rem; border-radius:20px; }
+    .badge-neardue { background:#fff7ed; color:#ea580c; border:1px solid #fed7aa; font-size:0.73rem; font-weight:600; padding:0.3rem 0.65rem; border-radius:20px; }
+    .badge-due     { background:#eff6ff; color:#1e73ff; border:1px solid #bfdbfe; font-size:0.73rem; font-weight:600; padding:0.3rem 0.65rem; border-radius:20px; }
+
+    .empty-state { padding: 4rem 2rem; text-align: center; }
+    .empty-state .icon { font-size: 3.5rem; opacity: 0.2; margin-bottom: 1rem; }
+  </style>
+
+  <!-- ======================================== SUMMARY CARDS ======================================== -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-blue h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Total Unpaid</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">{{ total_bills }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-list-check"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Active bills pending payment</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-red h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Overdue</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">{{ overdue_count }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-exclamation-triangle"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Past their due date</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-orange h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Due Soon</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">{{ near_due_count }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-alarm"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Due within 3 days</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-purple h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Total Amount Due</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">₹{{ total_amount_due|floatformat:2|intcomma }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-currency-rupee"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Sum of all pending bills</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================== BILLS LIST ======================================== -->
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-calendar2-week me-2 text-primary"></i>All Upcoming Bills</h5>
+          <small class="text-muted">Sorted by earliest due date first</small>
+        </div>
+        <a href="{% url 'add_bill' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus me-1"></i>Add Bill</a>
+      </div>
+
+      {% if bills %}
+      <div class="d-flex flex-column gap-3">
+        {% for bill in bills %}
+        <div class="bill-item">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+
+            <!-- Category Icon -->
+            <div class="bill-icon {{ bill.category|lower }}">
+              {% if bill.category == 'Rent' %}<i class="bi bi-house-door"></i>
+              {% elif bill.category == 'Utilities' %}<i class="bi bi-lightning-charge"></i>
+              {% elif bill.category == 'Entertainment' %}<i class="bi bi-film"></i>
+              {% elif bill.category == 'Subscriptions' %}<i class="bi bi-broadcast"></i>
+              {% elif bill.category == 'Transport' %}<i class="bi bi-truck"></i>
+              {% elif bill.category == 'Insurance' %}<i class="bi bi-shield-check"></i>
+              {% elif bill.category == 'EMI' %}<i class="bi bi-bank"></i>
+              {% elif bill.category == 'Food' %}<i class="bi bi-egg-fried"></i>
+              {% else %}<i class="bi bi-receipt"></i>
+              {% endif %}
+            </div>
+
+            <!-- Title & Category -->
+            <div class="flex-grow-1">
+              <div class="fw-semibold" style="font-size:0.95rem;">{{ bill.title }}</div>
+              <small class="text-muted">{{ bill.category }} &middot; Due {{ bill.due_date|date:"d M Y" }}</small>
+            </div>
+
+            <!-- Status Badge -->
+            <div>
+              {% if bill.due_date < today %}
+                <span class="badge-overdue"><i class="bi bi-exclamation-circle me-1"></i>Overdue</span>
+              {% elif bill.days_until_due <= 3 %}
+                <span class="badge-neardue"><i class="bi bi-alarm me-1"></i>Due Soon ({{ bill.days_until_due }}d)</span>
+              {% else %}
+                <span class="badge-due"><i class="bi bi-clock me-1"></i>Due in {{ bill.days_until_due }}d</span>
+              {% endif %}
+            </div>
+
+            <!-- Amount -->
+            <div class="text-end" style="min-width:90px;">
+              <div class="fw-bold text-dark" style="font-size:1.05rem;">₹{{ bill.amount|floatformat:2|intcomma }}</div>
+            </div>
+
+            <!-- Mark Paid Button -->
+            <div>
+              <form method="post" action="{% url 'mark_bill_paid' bill.pk %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="bills_list">
+                <button type="submit" class="btn btn-sm btn-success"
+                  onclick="return confirm('Mark \'{{ bill.title }}\' as paid? An expense of ₹{{ bill.amount }} will be auto-created.')">
+                  <i class="bi bi-check2-circle me-1"></i>Mark Paid
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="icon text-primary"><i class="bi bi-calendar-x"></i></div>
+        <h4 class="mt-2 mb-2">No Upcoming Bills</h4>
+        <p class="text-muted mb-3">You're all caught up! Add a recurring bill to start tracking.</p>
+        <a href="{% url 'add_bill' %}" class="btn btn-primary btn-lg">
+          <i class="bi bi-plus-circle me-1"></i>Add Your First Bill
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

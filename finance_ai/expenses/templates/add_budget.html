@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Budget | Finance Tracker{% endblock %}
+{% block content %}
+
+<div class="container py-4" style="max-width: 600px;">
+
+  <style>
+    .card { border: none !important; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .card-body { padding: 2rem; }
+    .form-label { font-weight: 600; font-size: 0.9rem; color: #374151; margin-bottom: 0.4rem; }
+    .btn { padding: 0.55rem 1.4rem; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .header-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #1e73ff, #60a5fa); border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+    .header-icon i { font-size: 1.5rem; color: #fff; }
+  </style>
+
+  <!-- Header -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div class="header-icon shadow-sm">
+      <i class="bi bi-{% if is_edit %}pencil-square{% else %}pie-chart{% endif %}"></i>
+    </div>
+    <div>
+      <h1 class="fw-bold mb-0" style="font-size:1.6rem;">{% if is_edit %}Edit Budget{% else %}Set Budget{% endif %}</h1>
+      <p class="text-muted mb-0 small">
+        {% if is_edit %}Update the monthly limit for {{ budget.category }}{% else %}Set a monthly spending limit per category{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+
+      {% if form.errors %}
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>Please fix the errors below.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Category -->
+        <div class="mb-3">
+          <label for="id_category" class="form-label"><i class="bi bi-grid me-1 text-primary"></i>Expense Category</label>
+          {{ form.category }}
+          {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>{% endif %}
+          {% if is_edit %}<small class="text-muted">Category cannot be changed after creation. Delete and re-add to change.</small>{% endif %}
+        </div>
+
+        <!-- Monthly Budget -->
+        <div class="mb-4">
+          <label for="id_monthly_budget" class="form-label"><i class="bi bi-currency-rupee me-1 text-primary"></i>Monthly Budget (₹)</label>
+          <div class="input-group">
+            <span class="input-group-text fw-semibold">₹</span>
+            {{ form.monthly_budget }}
+          </div>
+          {% if form.monthly_budget.errors %}<div class="text-danger small mt-1">{{ form.monthly_budget.errors.0 }}</div>{% endif %}
+          <small class="text-muted">Your spending limit for this category per month</small>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary flex-fill">
+            <i class="bi bi-check2-circle me-1"></i>
+            {% if is_edit %}Update Budget{% else %}Set Budget{% endif %}
+          </button>
+          <a href="{% url 'budget_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Status Info -->
+  <div class="mt-3 p-3 rounded-3" style="background:rgba(13,110,253,0.05); border:1px solid rgba(13,110,253,0.1);">
+    <div class="d-flex gap-3 flex-wrap">
+      <div class="d-flex align-items-center gap-2">
+        <div class="rounded-circle" style="width:10px; height:10px; background:#16a34a;"></div>
+        <small class="text-muted">Safe: &lt; 50% used</small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="rounded-circle" style="width:10px; height:10px; background:#f59e0b;"></div>
+        <small class="text-muted">Warning: 50–80% used</small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="rounded-circle" style="width:10px; height:10px; background:#dc2626;"></div>
+        <small class="text-muted">Danger: &gt; 80% used</small>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django import forms
+from datetime import date as dt_date
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Expense
@@ -205,3 +206,71 @@ class DepositForm(forms.Form):
         }),
         label=""
     )
+
+
+class BillForm(forms.ModelForm):
+    from .models import Bill
+    class Meta:
+        from .models import Bill
+        model = Bill
+        fields = ('title', 'category', 'amount', 'due_date')
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Netflix Subscription',
+                'style': 'min-height: 42px; padding: 0.6rem 0.75rem;'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select',
+                'style': 'min-height: 42px; padding: 0.6rem 0.75rem;'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '0.00',
+                'min': '0.01',
+                'style': 'min-height: 42px; padding: 0.6rem 0.75rem;'
+            }),
+            'due_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'style': 'min-height: 42px; padding: 0.6rem 0.75rem;'
+            }),
+        }
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is None:
+            raise forms.ValidationError('Amount is required.')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        return amount
+
+
+class BudgetForm(forms.ModelForm):
+    from .models import Budget
+    class Meta:
+        from .models import Budget
+        model = Budget
+        fields = ('category', 'monthly_budget')
+        widgets = {
+            'category': forms.Select(attrs={
+                'class': 'form-select',
+                'style': 'min-height: 42px; padding: 0.6rem 0.75rem;'
+            }),
+            'monthly_budget': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '0.00',
+                'min': '0.01',
+                'style': 'min-height: 42px; padding: 0.6rem 0.75rem;'
+            }),
+        }
+
+    def clean_monthly_budget(self):
+        amount = self.cleaned_data.get('monthly_budget')
+        if amount is None:
+            raise forms.ValidationError('Monthly budget is required.')
+        if amount <= 0:
+            raise forms.ValidationError('Budget must be greater than zero.')
+        return amount

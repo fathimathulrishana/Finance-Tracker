@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Budget Allocation | Finance Tracker{% endblock %}
+{% block content %}
+
+<div class="container py-4">
+
+  <!-- ======================================== PAGE HEADER ======================================== -->
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="text-uppercase small text-muted mb-1"><i class="bi bi-pie-chart"></i> Financial Planning</p>
+      <h1 class="fw-bold mb-1">Budget Allocation</h1>
+      <p class="text-muted mb-0">Set monthly spending limits and track your progress.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <!-- AI Placeholder Button -->
+      <button class="btn btn-outline-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#aiModal">
+        <i class="bi bi-stars me-1"></i>Optimize with AI
+      </button>
+      <a href="{% url 'add_budget' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Add Category
+      </a>
+    </div>
+  </div>
+
+  <!-- ======================================== STYLES ======================================== -->
+  <style>
+    .card { border: none !important; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-body { padding: 1.5rem; }
+    .btn { padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .btn-sm { padding: 0.35rem 0.85rem; border-radius: 6px; }
+    .card-fintech { color: #fff; }
+    .card-fintech .icon-circle { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-fintech .icon-circle i { font-size: 1.5rem; color: #fff; }
+    .bg-gradient-blue   { background: linear-gradient(135deg, #1e73ff, #60a5fa); }
+    .bg-gradient-green  { background: linear-gradient(135deg, #16a34a, #4ade80); }
+    .bg-gradient-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    .bg-gradient-red    { background: linear-gradient(135deg, #dc2626, #f87171); }
+    .card-fintech:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+    .metric-label { letter-spacing: 1px; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; margin-bottom: 0; }
+
+    /* Budget Table Row */
+    .budget-row { background: #fff; border: 1px solid #f1f5f9; border-radius: 14px; padding: 1rem 1.25rem; transition: all 0.2s ease; }
+    .budget-row:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); border-color: #e2e8f0; }
+    .cat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
+
+    /* Progress bars */
+    .progress { height: 8px; border-radius: 20px; background: #f1f5f9; overflow: hidden; }
+    .progress-bar { border-radius: 20px; transition: width 0.6s ease; }
+    .progress-bar.safe    { background: linear-gradient(90deg, #16a34a, #4ade80); }
+    .progress-bar.warning { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .progress-bar.danger  { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+    /* Status badge */
+    .badge-safe    { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; font-size:0.7rem; font-weight:600; padding:0.25rem 0.65rem; border-radius:20px; }
+    .badge-warning { background:#fffbeb; color:#d97706; border:1px solid #fde68a; font-size:0.7rem; font-weight:600; padding:0.25rem 0.65rem; border-radius:20px; }
+    .badge-danger  { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.7rem; font-weight:600; padding:0.25rem 0.65rem; border-radius:20px; }
+
+    .empty-state { padding: 4rem 2rem; text-align: center; }
+    .empty-state .icon { font-size: 3.5rem; opacity: 0.2; margin-bottom: 1rem; }
+
+    /* Table headers */
+    .budget-table-header { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: #94a3b8; padding: 0 1.25rem; margin-bottom: 0.5rem; }
+  </style>
+
+  <!-- ======================================== SUMMARY CARDS ======================================== -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-blue h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Categories Set</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">{{ total_categories }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-grid"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Active budget categories</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-red h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Over Budget</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">{{ over_budget_count }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-exclamation-triangle"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Categories exceeding limit</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-green h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Total Budgeted</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">₹{{ total_budgeted|floatformat:0|intcomma }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-wallet2"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Monthly spending plan</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card card-fintech bg-gradient-orange h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <p class="metric-label">Total Spent</p>
+              <h3 class="fw-bold mb-0 text-white mt-1">₹{{ total_spent|floatformat:0|intcomma }}</h3>
+            </div>
+            <div class="icon-circle shadow-sm"><i class="bi bi-receipt"></i></div>
+          </div>
+          <span class="text-white text-opacity-75" style="font-size:0.75rem;">This month across all categories</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================== BUDGET TABLE ======================================== -->
+  <div class="card">
+    <div class="card-body">
+      <!-- Section Header -->
+      <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+          <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Category Budgets</h5>
+          <small class="text-muted">{{ today|date:"F Y" }} — Live spending vs. budget</small>
+        </div>
+        <a href="{% url 'add_budget' %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-plus me-1"></i>Add Category
+        </a>
+      </div>
+
+      {% if enriched %}
+
+      <!-- Column Headers -->
+      <div class="row budget-table-header d-none d-md-flex mb-2">
+        <div class="col-md-3">Category</div>
+        <div class="col-md-2 text-end">Budget</div>
+        <div class="col-md-2 text-end">Spent</div>
+        <div class="col-md-1 text-end">% Used</div>
+        <div class="col-md-3">Progress</div>
+        <div class="col-md-1 text-end">Actions</div>
+      </div>
+
+      <!-- Budget Rows -->
+      <div class="d-flex flex-column gap-3">
+        {% for item in enriched %}
+        <div class="budget-row">
+          <div class="row align-items-center g-2">
+
+            <!-- Category -->
+            <div class="col-12 col-md-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="cat-icon" style="background: {{ item.color }}1a; color: {{ item.color }};">
+                  <i class="bi {{ item.icon }}"></i>
+                </div>
+                <div>
+                  <div class="fw-semibold" style="font-size:0.95rem;">{{ item.obj.category }}</div>
+                  <small class="text-muted">Monthly Budget</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Budget -->
+            <div class="col-6 col-md-2 text-md-end">
+              <div class="fw-bold text-dark">₹{{ item.obj.monthly_budget|floatformat:0|intcomma }}</div>
+              <small class="text-muted d-md-none">Budget</small>
+            </div>
+
+            <!-- Spent -->
+            <div class="col-6 col-md-2 text-md-end">
+              <div class="fw-semibold" style="color:
+                {% if item.status == 'danger' %}#dc2626
+                {% elif item.status == 'warning' %}#d97706
+                {% else %}#16a34a
+                {% endif %};">
+                ₹{{ item.spent|floatformat:0|intcomma }}
+              </div>
+              <small class="text-muted d-md-none">Spent</small>
+            </div>
+
+            <!-- % Used -->
+            <div class="col-4 col-md-1 text-md-end">
+              {% if item.status == 'danger' %}
+                <span class="badge-danger"><i class="bi bi-exclamation me-1"></i>{{ item.usage_pct_display }}%</span>
+              {% elif item.status == 'warning' %}
+                <span class="badge-warning"><i class="bi bi-dash me-1"></i>{{ item.usage_pct_display }}%</span>
+              {% else %}
+                <span class="badge-safe"><i class="bi bi-check me-1"></i>{{ item.usage_pct_display }}%</span>
+              {% endif %}
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="col-8 col-md-3">
+              <div class="progress">
+                <div class="progress-bar {{ item.status }}" style="width: {{ item.usage_pct }}%;"
+                  role="progressbar" aria-valuenow="{{ item.usage_pct }}"
+                  aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+              <small class="text-muted" style="font-size:0.7rem; margin-top:3px; display:block;">
+                ₹{{ item.spent|floatformat:0|intcomma }} of ₹{{ item.obj.monthly_budget|floatformat:0|intcomma }}
+              </small>
+            </div>
+
+            <!-- Actions -->
+            <div class="col-12 col-md-1 text-md-end">
+              <div class="d-flex gap-1 justify-content-end">
+                <a href="{% url 'edit_budget' item.obj.pk %}"
+                  class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'delete_budget' item.obj.pk %}"
+                  class="btn btn-sm btn-outline-danger" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if available_cats %}
+      <div class="mt-4 p-3 rounded-3" style="background:#f8fafc; border:1px dashed #cbd5e1;">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <i class="bi bi-plus-circle text-primary"></i>
+          <span class="text-muted small">Set budgets for remaining categories:</span>
+          {% for cat in available_cats %}
+          <a href="{% url 'add_budget' %}" class="badge text-bg-light border text-dark px-2 py-1" style="text-decoration:none; border-radius:20px; font-size:0.75rem;">
+            {{ cat }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% else %}
+      <div class="empty-state">
+        <div class="icon text-primary"><i class="bi bi-pie-chart"></i></div>
+        <h4 class="mt-2 mb-2">No Budget Categories Yet</h4>
+        <p class="text-muted mb-3">Start by setting a monthly spending limit for each expense category.</p>
+        <a href="{% url 'add_budget' %}" class="btn btn-primary btn-lg">
+          <i class="bi bi-plus-circle me-1"></i>Set Your First Budget
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================================== AI MODAL (Placeholder) ======================================== -->
+<div class="modal fade" id="aiModal" tabindex="-1" aria-labelledby="aiModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:20px; overflow:hidden; border:none;">
+      <div class="modal-header border-0 pb-0"
+        style="background: linear-gradient(135deg, #6f42c1, #8b5cf6); padding: 2rem 2rem 1rem;">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <div class="d-flex align-items-center justify-content-center rounded-2"
+              style="width:38px; height:38px; background:rgba(255,255,255,0.2);">
+              <i class="bi bi-stars text-white fs-5"></i>
+            </div>
+            <h5 class="modal-title fw-bold text-white mb-0" id="aiModalLabel">AI Budget Optimizer</h5>
+          </div>
+          <small class="text-white text-opacity-75">Powered by Financial Intelligence</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="text-center mb-4">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+            style="width:70px;height:70px; background:rgba(111,66,193,0.08);">
+            <i class="bi bi-robot text-primary" style="font-size:2rem;"></i>
+          </div>
+          <h6 class="fw-bold">AI Analysis Coming Soon</h6>
+          <p class="text-muted small">Our AI will analyze your spending patterns and suggest optimal budget allocation based on your income, expenses, and financial goals.</p>
+        </div>
+        <div class="d-flex flex-column gap-2">
+          <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
+            <i class="bi bi-graph-up-arrow text-success fs-5"></i>
+            <div><div class="fw-semibold" style="font-size:0.85rem;">Smart Budget Suggestions</div><small class="text-muted">Category-wise recommendations</small></div>
+          </div>
+          <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
+            <i class="bi bi-shield-check text-primary fs-5"></i>
+            <div><div class="fw-semibold" style="font-size:0.85rem;">Overspending Alerts</div><small class="text-muted">Proactive budget warnings</small></div>
+          </div>
+          <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:#f8fafc; border:1px solid #f1f5f9;">
+            <i class="bi bi-lightbulb text-warning fs-5"></i>
+            <div><div class="fw-semibold" style="font-size:0.85rem;">Savings Reallocation</div><small class="text-muted">Move unused budget to goals</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" disabled style="opacity:0.6;">
+          <i class="bi bi-stars me-1"></i>Coming Soon
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

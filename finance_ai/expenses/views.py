@@ -17,8 +17,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm, SavingGoalForm, DepositForm
-from .models import Expense, Income, SavingGoal
+from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm, SavingGoalForm, DepositForm, BillForm, BudgetForm
+from .models import Expense, Income, SavingGoal, Bill, Budget
 from .utils.smart_features import categorize_expense, detect_anomaly as rule_based_anomaly, generate_suggestions
 from expenses.ml.predictors.lstm_predictor import predict_next_month
 from expenses.ml.predictors.category_predictor import predict_category
@@ -277,6 +277,19 @@ def dashboard(request):
 	saving_goals = SavingGoal.objects.filter(user=request.user)
 	insights = generate_insights(request.user, start_date=start_date, end_date=end_date)
 
+	# Upcoming Bills: overdue + due within 30 days, max 5 for dashboard widget
+	upcoming_bills = Bill.objects.filter(
+		user=request.user,
+		is_paid=False,
+		due_date__lte=today + timedelta(days=30)
+	).order_by('due_date')[:5]
+
+	# Budget teaser: enrich all budgets, surface warning/danger for dashboard
+	budgets_qs = Budget.objects.filter(user=request.user)
+	budget_enriched = _enrich_budgets(budgets_qs, request.user, today)
+	budget_alerts = [e for e in budget_enriched if e['status'] in ('warning', 'danger')][:3]
+	budget_set = len(budget_enriched) > 0
+
 	context = {
 		'total_month': total_month,
 		'count_month': count_month,
@@ -311,6 +324,10 @@ def dashboard(request):
 		'comparison_icon_inc': comp_icon_inc,
 		'saving_goals': saving_goals,
 		'insights': insights,
+		'upcoming_bills': upcoming_bills,
+		'today': today,
+		'budget_alerts': budget_alerts,
+		'budget_set': budget_set,
 	}
 	return render(request, 'dashboard.html', context)
 
@@ -810,3 +827,256 @@ def goals_dashboard(request):
 		'available_savings': available_savings,
 	}
 	return render(request, 'goals_dashboard.html', context)
+
+
+# ─────────────────────────────────────────────
+# UPCOMING BILLS VIEWS
+# ─────────────────────────────────────────────
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def bills_list(request):
+	"""Full bills page – shows upcoming + overdue unpaid bills."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	today = date.today()
+
+	# All unpaid bills for this user ordered by due_date
+	bills = Bill.objects.filter(
+		user=request.user,
+		is_paid=False,
+	).order_by('due_date')
+
+	# Stats
+	total_bills = Bill.objects.filter(user=request.user, is_paid=False).count()
+	overdue_count = sum(1 for b in bills if b.due_date < today)
+	near_due_count = sum(1 for b in bills if 0 <= (b.due_date - today).days <= 3)
+	total_amount_due = bills.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+	return render(request, 'bills.html', {
+		'bills': bills,
+		'today': today,
+		'total_bills': total_bills,
+		'overdue_count': overdue_count,
+		'near_due_count': near_due_count,
+		'total_amount_due': total_amount_due,
+	})
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def add_bill(request):
+	"""Add a new upcoming bill."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	if request.method == 'POST':
+		form = BillForm(request.POST)
+		if form.is_valid():
+			bill = form.save(commit=False)
+			bill.user = request.user
+			bill.save()
+			messages.success(request, f'Bill "{bill.title}" added successfully!')
+			return redirect('bills_list')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = BillForm()
+	return render(request, 'add_bill.html', {'form': form})
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def mark_bill_paid(request, pk):
+	"""Mark a bill as paid and auto-create an Expense record."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	bill = get_object_or_404(Bill, pk=pk, user=request.user)
+
+	if request.method == 'POST':
+		if not bill.is_paid:
+			bill.is_paid = True
+			bill.save()
+
+			# Map bill category to Expense category (best match / fallback)
+			expense_category_map = {
+				'Rent': 'Bills',
+				'Utilities': 'Bills',
+				'Entertainment': 'Shopping',
+				'Subscriptions': 'Shopping',
+				'Transport': 'Travel',
+				'Insurance': 'Bills',
+				'EMI': 'Bills',
+				'Food': 'Food',
+				'Other': 'Others',
+			}
+			expense_cat = expense_category_map.get(bill.category, 'Others')
+
+			# Auto-create expense
+			Expense.objects.create(
+				user=request.user,
+				category=expense_cat,
+				amount=bill.amount,
+				description=f'Bill Paid: {bill.title}',
+				date=date.today(),
+			)
+
+			messages.success(request, f'"{bill.title}" marked as paid! Expense of ₹{bill.amount} recorded.')
+		else:
+			messages.info(request, 'This bill is already marked as paid.')
+
+	next_url = request.POST.get('next', 'bills_list')
+	return redirect(next_url)
+
+
+# ─────────────────────────────────────────────
+# BUDGET ALLOCATION VIEWS
+# ─────────────────────────────────────────────
+
+_CATEGORY_ICONS = {
+	'Food':     'bi-egg-fried',
+	'Travel':   'bi-airplane',
+	'Shopping': 'bi-bag',
+	'Bills':    'bi-receipt',
+	'Others':   'bi-grid',
+}
+
+_CATEGORY_COLORS = {
+	'Food':     '#fb923c',
+	'Travel':   '#14b8a6',
+	'Shopping': '#8b5cf6',
+	'Bills':    '#1e73ff',
+	'Others':   '#64748b',
+}
+
+
+def _enrich_budgets(budgets, user, today):
+	"""Attach spent_amount, usage_pct and status to each budget object."""
+	enriched = []
+	for b in budgets:
+		spent = Expense.objects.filter(
+			user=user,
+			category=b.category,
+			date__year=today.year,
+			date__month=today.month,
+		).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+		if b.monthly_budget > 0:
+			usage_pct = round(float(spent / b.monthly_budget) * 100, 1)
+		else:
+			usage_pct = 0.0
+
+		if usage_pct >= 80:
+			status = 'danger'
+		elif usage_pct >= 50:
+			status = 'warning'
+		else:
+			status = 'safe'
+
+		enriched.append({
+			'obj': b,
+			'spent': spent,
+			'usage_pct': min(usage_pct, 100),  # cap bar at 100
+			'usage_pct_display': usage_pct,  # show real value even if over 100
+			'status': status,
+			'icon': _CATEGORY_ICONS.get(b.category, 'bi-grid'),
+			'color': _CATEGORY_COLORS.get(b.category, '#64748b'),
+		})
+	return enriched
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def budget_dashboard(request):
+	"""Budget Allocation main page."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	today = date.today()
+	budgets = Budget.objects.filter(user=request.user)
+	enriched = _enrich_budgets(budgets, request.user, today)
+
+	# Summary stats
+	total_categories = len(enriched)
+	over_budget_count = sum(1 for e in enriched if e['usage_pct_display'] > 100)
+	warning_count = sum(1 for e in enriched if e['status'] == 'warning')
+	total_budgeted = budgets.aggregate(t=Sum('monthly_budget'))['t'] or Decimal('0.00')
+	total_spent = sum(e['spent'] for e in enriched)
+
+	# Categories not yet budgeted (for Add Budget dropdown pre-filter)
+	budgeted_cats = list(budgets.values_list('category', flat=True))
+	all_cats = [c[0] for c in Budget.CATEGORY_CHOICES]
+	available_cats = [c for c in all_cats if c not in budgeted_cats]
+
+	return render(request, 'budget_dashboard.html', {
+		'enriched': enriched,
+		'today': today,
+		'total_categories': total_categories,
+		'over_budget_count': over_budget_count,
+		'warning_count': warning_count,
+		'total_budgeted': total_budgeted,
+		'total_spent': total_spent,
+		'available_cats': available_cats,
+	})
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def add_budget(request):
+	"""Add a new budget category."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	if request.method == 'POST':
+		form = BudgetForm(request.POST)
+		if form.is_valid():
+			# Check for duplicate category
+			cat = form.cleaned_data['category']
+			if Budget.objects.filter(user=request.user, category=cat).exists():
+				messages.error(request, f'A budget for "{cat}" already exists. Edit it instead.')
+				return render(request, 'add_budget.html', {'form': form})
+			budget = form.save(commit=False)
+			budget.user = request.user
+			budget.save()
+			messages.success(request, f'Budget for "{budget.category}" set to ₹{budget.monthly_budget}!')
+			return redirect('budget_dashboard')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = BudgetForm()
+	return render(request, 'add_budget.html', {'form': form})
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def edit_budget(request, pk):
+	"""Edit monthly budget amount for an existing budget category."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	budget = get_object_or_404(Budget, pk=pk, user=request.user)
+	if request.method == 'POST':
+		form = BudgetForm(request.POST, instance=budget)
+		if form.is_valid():
+			form.save()
+			messages.success(request, f'Budget for "{budget.category}" updated!')
+			return redirect('budget_dashboard')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = BudgetForm(instance=budget)
+	return render(request, 'add_budget.html', {'form': form, 'is_edit': True, 'budget': budget})
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def delete_budget(request, pk):
+	"""Delete a budget category."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	budget = get_object_or_404(Budget, pk=pk, user=request.user)
+	if request.method == 'POST':
+		budget.delete()
+		messages.success(request, f'Budget for "{budget.category}" removed.')
+		return redirect('budget_dashboard')
+	return render(request, 'confirm_delete_budget.html', {'budget': budget})

@@ -473,6 +473,229 @@
   </div>
 
   <!-- ========================================
+       UPCOMING BILLS WIDGET
+       Shows overdue + next-30-day bills on dashboard
+       ======================================== -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #f59e0b !important;">
+        <div class="card-body">
+
+          <!-- Widget Header -->
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <div class="d-flex align-items-center justify-content-center rounded-2 shadow-sm"
+                style="background: linear-gradient(135deg, #f59e0b, #fbbf24); width: 44px; height: 44px;">
+                <i class="bi bi-calendar-check text-white fs-5"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold mb-0">Upcoming Bills</h5>
+                <small class="text-muted">Bills due in the next 30 days</small>
+              </div>
+            </div>
+            <a href="{% url 'add_bill' %}" class="btn btn-sm btn-warning text-white fw-semibold">
+              <i class="bi bi-plus me-1"></i>Add Bill
+            </a>
+          </div>
+
+          {% if upcoming_bills %}
+          <div class="d-flex flex-column gap-2">
+            {% for bill in upcoming_bills %}
+            <div style="background:#fff; border:1px solid #f1f5f9; border-radius:12px; padding:0.85rem 1rem; transition: all 0.2s ease;"
+              onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.06)'"
+              onmouseout="this.style.boxShadow='none'">
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+
+                <!-- Icon -->
+                <div class="d-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width:40px; height:40px; border-radius:10px;
+                  background:{% if bill.due_date < today %}rgba(220,38,38,0.1){% elif bill.days_until_due <= 3 %}rgba(245,158,11,0.1){% else %}rgba(13,110,253,0.1){% endif %};
+                  color:{% if bill.due_date < today %}#dc2626{% elif bill.days_until_due <= 3 %}#f59e0b{% else %}#0d6efd{% endif %};">
+                  {% if bill.category == 'Rent' %}<i class="bi bi-house-door"></i>
+                  {% elif bill.category == 'Utilities' %}<i class="bi bi-lightning-charge"></i>
+                  {% elif bill.category == 'Entertainment' %}<i class="bi bi-film"></i>
+                  {% elif bill.category == 'Subscriptions' %}<i class="bi bi-broadcast"></i>
+                  {% elif bill.category == 'Transport' %}<i class="bi bi-truck"></i>
+                  {% elif bill.category == 'Insurance' %}<i class="bi bi-shield-check"></i>
+                  {% elif bill.category == 'EMI' %}<i class="bi bi-bank"></i>
+                  {% elif bill.category == 'Food' %}<i class="bi bi-egg-fried"></i>
+                  {% else %}<i class="bi bi-receipt"></i>
+                  {% endif %}
+                </div>
+
+                <!-- Title & Category -->
+                <div class="flex-grow-1">
+                  <div class="fw-semibold" style="font-size:0.9rem;">{{ bill.title }}</div>
+                  <small class="text-muted">{{ bill.category }} · {{ bill.due_date|date:"d M Y" }}</small>
+                </div>
+
+                <!-- Status Badge -->
+                {% if bill.due_date < today %}
+                  <span style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.7rem; font-weight:600; padding:0.25rem 0.6rem; border-radius:20px; white-space:nowrap;">
+                    <i class="bi bi-exclamation-circle me-1"></i>Overdue
+                  </span>
+                {% elif bill.days_until_due <= 3 %}
+                  <span style="background:#fff7ed; color:#ea580c; border:1px solid #fed7aa; font-size:0.7rem; font-weight:600; padding:0.25rem 0.6rem; border-radius:20px; white-space:nowrap;">
+                    <i class="bi bi-alarm me-1"></i>Due Soon
+                  </span>
+                {% else %}
+                  <span style="background:#eff6ff; color:#1e73ff; border:1px solid #bfdbfe; font-size:0.7rem; font-weight:600; padding:0.25rem 0.6rem; border-radius:20px; white-space:nowrap;">
+                    <i class="bi bi-clock me-1"></i>{{ bill.days_until_due }}d left
+                  </span>
+                {% endif %}
+
+                <!-- Amount -->
+                <div class="fw-bold text-dark" style="font-size:0.95rem; min-width:80px; text-align:right;">
+                  ₹{{ bill.amount|floatformat:2|intcomma }}
+                </div>
+
+                <!-- Mark Paid -->
+                <form method="post" action="{% url 'mark_bill_paid' bill.pk %}" class="d-inline mb-0">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="dashboard">
+                  <button type="submit" class="btn btn-sm btn-outline-success"
+                    style="border-radius:8px; font-size:0.78rem;"
+                    onclick="return confirm('Mark \'{{ bill.title }}\' as paid?')">
+                    <i class="bi bi-check2-circle me-1"></i>Paid
+                  </button>
+                </form>
+
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="mt-3 text-end">
+            <a href="{% url 'bills_list' %}" class="text-decoration-none text-warning fw-semibold" style="font-size:0.85rem;">
+              View All Bills <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+
+          {% else %}
+          <div class="text-center py-3">
+            <i class="bi bi-calendar-check text-muted" style="font-size:2.5rem; opacity:0.2;"></i>
+            <p class="text-muted mt-2 mb-2" style="font-size:0.9rem;">No upcoming bills in the next 30 days.</p>
+            <a href="{% url 'add_bill' %}" class="btn btn-sm btn-warning text-white fw-semibold">
+              <i class="bi bi-plus me-1"></i>Add a Bill
+            </a>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       BUDGET ALLOCATION WIDGET
+       Shows warning/danger categories on dashboard
+       ======================================== -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #6366f1 !important;">
+        <div class="card-body">
+
+          <!-- Widget Header -->
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <div class="d-flex align-items-center justify-content-center rounded-2 shadow-sm"
+                style="background: linear-gradient(135deg, #6366f1, #8b5cf6); width: 44px; height: 44px;">
+                <i class="bi bi-pie-chart text-white fs-5"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold mb-0">Budget Allocation</h5>
+                <small class="text-muted">Monthly spending limits vs. actual</small>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <a href="{% url 'add_budget' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus me-1"></i>Add Category
+              </a>
+              <a href="{% url 'budget_dashboard' %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-bar-chart-line me-1"></i>View All
+              </a>
+            </div>
+          </div>
+
+          {% if budget_set %}
+            {% if budget_alerts %}
+            <!-- Warning/Danger categories -->
+            <div class="d-flex flex-column gap-2 mb-3">
+              {% for item in budget_alerts %}
+              <div style="background:#fff; border:1px solid #f1f5f9; border-radius:12px; padding:0.85rem 1rem;">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                  <!-- Icon -->
+                  <div class="d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:40px; height:40px; border-radius:10px;
+                    background:{{ item.color }}1a; color:{{ item.color }}; font-size:1.1rem;">
+                    <i class="bi {{ item.icon }}"></i>
+                  </div>
+                  <!-- Name + bar -->
+                  <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold" style="font-size:0.9rem;">{{ item.obj.category }}</span>
+                      <span style="font-size:0.78rem; color:{% if item.status == 'danger' %}#dc2626{% else %}#d97706{% endif %}; font-weight:600;">
+                        {{ item.usage_pct_display }}% used
+                      </span>
+                    </div>
+                    <div style="height:6px; border-radius:20px; background:#f1f5f9; overflow:hidden;">
+                      <div style="height:100%; width:{{ item.usage_pct }}%; border-radius:20px;
+                        background:{% if item.status == 'danger' %}linear-gradient(90deg,#dc2626,#f87171){% else %}linear-gradient(90deg,#f59e0b,#fbbf24){% endif %};
+                        transition: width 0.6s ease;"></div>
+                    </div>
+                    <small class="text-muted" style="font-size:0.7rem;">
+                      ₹{{ item.spent|floatformat:0 }} spent of ₹{{ item.obj.monthly_budget|floatformat:0 }} budget
+                    </small>
+                  </div>
+                  <!-- Badge -->
+                  <div>
+                    {% if item.status == 'danger' %}
+                    <span style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; font-size:0.68rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:20px; white-space:nowrap;">
+                      <i class="bi bi-exclamation me-1"></i>Over Limit
+                    </span>
+                    {% else %}
+                    <span style="background:#fffbeb; color:#d97706; border:1px solid #fde68a; font-size:0.68rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:20px; white-space:nowrap;">
+                      <i class="bi bi-dash me-1"></i>Warning
+                    </span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="text-end">
+              <a href="{% url 'budget_dashboard' %}" class="text-decoration-none fw-semibold"
+                style="font-size:0.85rem; color:#6366f1;">
+                View All Budgets <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+            {% else %}
+            <!-- All categories safe -->
+            <div class="text-center py-3">
+              <i class="bi bi-check-circle text-success" style="font-size:2.5rem;"></i>
+              <p class="text-muted mt-2 mb-2" style="font-size:0.9rem;">All budget categories are within safe limits. 🎉</p>
+              <a href="{% url 'budget_dashboard' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-bar-chart-line me-1"></i>View Budget Details
+              </a>
+            </div>
+            {% endif %}
+          {% else %}
+          <!-- No budgets set -->
+          <div class="text-center py-3">
+            <i class="bi bi-pie-chart text-muted" style="font-size:2.5rem; opacity:0.2;"></i>
+            <p class="text-muted mt-2 mb-2" style="font-size:0.9rem;">No budget categories set yet. Start planning your spending!</p>
+            <a href="{% url 'add_budget' %}" class="btn btn-sm btn-primary">
+              <i class="bi bi-plus me-1"></i>Set Your First Budget
+            </a>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
        CHARTS SECTION
        Visual analytics with improved card layout
        ======================================== -->

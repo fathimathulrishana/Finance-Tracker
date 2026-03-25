@@ -33,4 +33,7 @@ urlpatterns = [
     path('budget/add/', views.add_budget, name='add_budget'),
     path('budget/<int:pk>/edit/', views.edit_budget, name='edit_budget'),
     path('budget/<int:pk>/delete/', views.delete_budget, name='delete_budget'),
+
+    # AI Budget Optimizer
+    path('ai/budget-analysis/', views.ai_budget_analysis, name='ai_budget_analysis'),
 ]

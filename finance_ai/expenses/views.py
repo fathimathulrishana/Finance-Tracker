@@ -6,6 +6,13 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.cache import cache
+
+
+# ── AI cache helper ────────────────────────────────────────────────
+def _invalidate_ai_cache(user) -> None:
+    """Immediately clear the AI budget analysis cache for this user."""
+    cache.delete(f'ai_budget_{user.pk}')
 from django.contrib.auth.views import LoginView
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
@@ -430,6 +437,7 @@ def add_expense(request):
 				expense.is_anomaly = rule_based_anomaly(request.user, expense.amount)
 			
 			expense.save()
+			_invalidate_ai_cache(request.user)   # ← fresh AI insights after add
 			messages.success(request, 'Expense added successfully!')
 			return redirect('expense_list')
 		messages.error(request, 'Please correct the errors below.')
@@ -476,6 +484,7 @@ def edit_expense(request, pk: int):
 				expense.is_anomaly = rule_based_anomaly(request.user, expense.amount)
 			
 			expense.save()
+			_invalidate_ai_cache(request.user)   # ← fresh AI insights after edit
 			messages.success(request, 'Expense updated successfully!')
 			return redirect('expense_list')
 		messages.error(request, 'Please correct the errors below.')
@@ -490,6 +499,7 @@ def delete_expense(request, pk: int):
 	expense = get_object_or_404(Expense, pk=pk, user=request.user)
 	if request.method == 'POST':
 		expense.delete()
+		_invalidate_ai_cache(request.user)   # ← fresh AI insights after delete
 		messages.success(request, 'Expense deleted successfully!')
 		return redirect('expense_list')
 	return render(request, 'confirm_delete.html', {'expense': expense})
@@ -1039,6 +1049,7 @@ def add_budget(request):
 			budget = form.save(commit=False)
 			budget.user = request.user
 			budget.save()
+			_invalidate_ai_cache(request.user)   # ← clear AI insights cache
 			messages.success(request, f'Budget for "{budget.category}" set to ₹{budget.monthly_budget}!')
 			return redirect('budget_dashboard')
 		messages.error(request, 'Please correct the errors below.')
@@ -1059,6 +1070,7 @@ def edit_budget(request, pk):
 		form = BudgetForm(request.POST, instance=budget)
 		if form.is_valid():
 			form.save()
+			_invalidate_ai_cache(request.user)   # ← clear AI insights cache
 			messages.success(request, f'Budget for "{budget.category}" updated!')
 			return redirect('budget_dashboard')
 		messages.error(request, 'Please correct the errors below.')
@@ -1077,6 +1089,49 @@ def delete_budget(request, pk):
 	budget = get_object_or_404(Budget, pk=pk, user=request.user)
 	if request.method == 'POST':
 		budget.delete()
+		_invalidate_ai_cache(request.user)   # ← clear AI insights cache
 		messages.success(request, f'Budget for "{budget.category}" removed.')
 		return redirect('budget_dashboard')
 	return render(request, 'confirm_delete_budget.html', {'budget': budget})
+
+
+# ─────────────────────────────────────────────────────────────
+# AI BUDGET OPTIMIZER VIEW
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def ai_budget_analysis(request):
+	"""
+	AJAX endpoint: GET /ai/budget-analysis/
+	Returns structured budget analysis as JSON.
+	Safe to call multiple times — results cached for 10 minutes.
+	"""
+	from django.http import JsonResponse
+	from expenses.services import ai_budget_engine
+
+	# Check for refresh flag (e.g. ?refresh=true or ?refresh=1)
+	force_refresh = request.GET.get('refresh', '').lower() in ['true', '1']
+
+	try:
+		result = ai_budget_engine.generate_budget_analysis(request.user, force_refresh=force_refresh)
+		return JsonResponse({'status': 'ok', 'data': result})
+	except Exception as exc:
+		import logging
+		logging.getLogger(__name__).error('ai_budget_analysis view error: %s', exc)
+		return JsonResponse({
+			'status': 'error',
+			'data': {
+				'suggestions': [],
+				'alerts': [{
+					'title': 'Analysis Temporarily Unavailable',
+					'message': 'Our AI engine is warming up. Please try again in a moment.',
+					'icon': 'bi-exclamation-circle',
+					'severity': 'warning',
+				}],
+				'tips': [],
+				'anomalies': [],
+				'meta': {'ml_used': False, 'months_analyzed': 0,
+					'categories_analyzed': 0, 'total_spent': 0, 'total_budgeted': 0},
+			}
+		}, status=200)  # Always 200 — never crash the UI

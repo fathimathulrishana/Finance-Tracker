@@ -26,26 +26,36 @@
        ======================================== -->
   <div class="card mb-4 border-0 shadow-sm">
     <div class="card-body py-3">
-      <form method="get" class="d-flex flex-wrap align-items-center gap-3">
-        <label for="range" class="fw-bold mb-0"><i class="bi bi-calendar-range text-primary"></i> Time Period:</label>
-        <select name="range" id="range" class="form-select form-select-sm w-auto" onchange="toggleCustomDates()">
-          <option value="current" {% if current_range == 'current' %}selected{% endif %}>Current Month</option>
-          <option value="previous" {% if current_range == 'previous' %}selected{% endif %}>Previous Month</option>
-          <option value="3months" {% if current_range == '3months' %}selected{% endif %}>Last 3 Months</option>
-          <option value="6months" {% if current_range == '6months' %}selected{% endif %}>Last 6 Months</option>
-          <option value="year" {% if current_range == 'year' %}selected{% endif %}>This Year</option>
-          <option value="custom" {% if current_range == 'custom' %}selected{% endif %}>Custom Range</option>
-        </select>
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <form method="get" class="d-flex flex-wrap align-items-center gap-3">
+          <label for="range" class="fw-bold mb-0"><i class="bi bi-calendar-range text-primary"></i> Time Period:</label>
+          <select name="range" id="range" class="form-select form-select-sm w-auto" onchange="toggleCustomDates()">
+            <option value="current" {% if current_range == 'current' %}selected{% endif %}>Current Month</option>
+            <option value="previous" {% if current_range == 'previous' %}selected{% endif %}>Previous Month</option>
+            <option value="3months" {% if current_range == '3months' %}selected{% endif %}>Last 3 Months</option>
+            <option value="6months" {% if current_range == '6months' %}selected{% endif %}>Last 6 Months</option>
+            <option value="year" {% if current_range == 'year' %}selected{% endif %}>This Year</option>
+            <option value="custom" {% if current_range == 'custom' %}selected{% endif %}>Custom Range</option>
+          </select>
 
-        <div id="custom-dates"
-          class="d-flex align-items-center gap-2 {% if current_range != 'custom' %}d-none{% endif %}">
-          <input type="date" name="start_date" class="form-control form-control-sm w-auto" value="{{ start_date }}">
-          <span class="text-muted">to</span>
-          <input type="date" name="end_date" class="form-control form-control-sm w-auto" value="{{ end_date }}">
+          <div id="custom-dates"
+            class="d-flex align-items-center gap-2 {% if current_range != 'custom' %}d-none{% endif %}">
+            <input type="date" name="start_date" class="form-control form-control-sm w-auto" value="{{ start_date }}">
+            <span class="text-muted">to</span>
+            <input type="date" name="end_date" class="form-control form-control-sm w-auto" value="{{ end_date }}">
+          </div>
+
+          <button type="submit" class="btn btn-sm btn-primary">Apply Filter</button>
+        </form>
+
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small d-none d-md-inline me-1"><i class="bi bi-download"></i> Export Reports:</span>
+          <a href="{% url 'download_csv' %}?range={{ current_range }}&start_date={{ start_date }}&end_date={{ end_date }}"
+            class="btn btn-sm btn-outline-success"><i class="bi bi-filetype-csv"></i> CSV</a>
+          <a href="{% url 'download_pdf' %}?range={{ current_range }}&start_date={{ start_date }}&end_date={{ end_date }}"
+            class="btn btn-sm btn-outline-danger"><i class="bi bi-filetype-pdf"></i> PDF</a>
         </div>
-
-        <button type="submit" class="btn btn-sm btn-primary">Apply Filter</button>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -195,7 +205,7 @@
       margin-bottom: 1rem;
     }
 
-    /* Responsive Badge Wrap */
+    /* ── Badge Wrap ── */
     .badge-wrap {
       max-width: 100%;
       white-space: normal !important;
@@ -204,108 +214,60 @@
       text-align: left;
     }
 
-    /* ── Saving Goal Item Cards ── */
-    .goal-item-card {
-      background: #fff;
-      border: 1px solid #f0f0f0;
-      border-radius: 14px;
-      padding: 0.9rem 1rem;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    /* ── Premium AI Insights UI ── */
+    .insights-scroll {
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 0.5rem;
     }
-
-    .goal-item-card:hover {
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
-      transform: translateY(-2px);
+    .insights-scroll::-webkit-scrollbar {
+      width: 6px;
     }
-
-    /* ── Goal Action Icon Buttons ── */
-    .goal-action-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 26px;
-      height: 26px;
+    .insights-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
       border-radius: 8px;
-      font-size: 0.75rem;
-      text-decoration: none;
-      transition: all 0.18s ease;
+    }
+    .insights-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+    }
+    .insights-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
 
-    .goal-action-deposit {
-      background: rgba(25, 135, 84, 0.1);
-      color: #198754;
+    .insight-item {
+      background: #ffffff;
+      border: 1px solid #f1f5f9;
+      border-radius: 12px;
+      transition: all 0.2s ease;
     }
-
-    .goal-action-deposit:hover {
-      background: #198754;
-      color: #fff;
+    .insight-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      border-color: #e2e8f0;
     }
-
-    .goal-action-edit {
-      background: rgba(108, 117, 125, 0.1);
-      color: #6c757d;
-    }
-
-    .goal-action-edit:hover {
-      background: #6c757d;
-      color: #fff;
-    }
-
-    .goal-action-delete {
-      background: rgba(220, 53, 69, 0.1);
-      color: #dc3545;
-    }
-
-    .goal-action-delete:hover {
-      background: #dc3545;
-      color: #fff;
-    }
-
-    /* ── Goal Progress Bar ── */
-    .goal-progress-track {
-      background: #e9ecef;
-      border-radius: 50px;
-      height: 7px;
-      overflow: hidden;
-    }
-
-    .goal-progress-fill-dash {
-      height: 100%;
-      border-radius: 50px;
-      background: linear-gradient(90deg, #0d6efd, #60a5fa);
-      transition: width 0.6s ease;
-    }
-
-    .goal-progress-fill-dash.done {
-      background: linear-gradient(90deg, #198754, #4ade80);
-    }
+    .icon-success-soft { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
+    .icon-warning-soft { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .icon-info-soft { background: rgba(13, 110, 253, 0.1); color: #0d6efd; }
   </style>
 
   <div class="row g-3 mb-4">
-    <!-- Card 1: Total Balance -->
+    <!-- Card 1: Available Balance -->
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-blue h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
-              <p class="metric-label">Total Balance</p>
-              <h3 class="fw-bold mb-0 text-truncate mt-2 text-white">₹{{ total_balance|floatformat:2|intcomma }}</h3>
+              <p class="metric-label">Available Balance</p>
+              <h3 class="fw-bold mb-0 text-truncate mt-1 text-white">₹{{ available_balance|floatformat:2|intcomma }}</h3>
             </div>
-            <div class="icon-circle">
+            <div class="icon-circle shadow-sm">
               <i class="bi bi-wallet2"></i>
             </div>
           </div>
-          <p class="metric-trend mb-0">
-            {% if balance_change_percent > 0 %}
-            <span class="text-success fw-bold me-2">↑ +{{ balance_change_percent|floatformat:1 }}%</span>
-            {% elif balance_change_percent < 0 %} <span class="text-danger fw-bold me-2">↓ {{
-              balance_change_percent|floatformat:1 }}%</span>
-              {% else %}
-              <span class="text-white-50 fw-bold me-2">- {{ balance_change_percent|floatformat:1 }}%</span>
-              {% endif %}
-              <span class="text-white-50 small">from last month</span>
-          </p>
+          <div class="mt-3">
+            <span class="text-white text-opacity-75" style="font-size: 0.75rem; letter-spacing: 0.3px;">Money you can spend right now</span>
+          </div>
         </div>
       </div>
     </div>
@@ -314,25 +276,21 @@
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-green h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
               <p class="metric-label">Monthly Income</p>
-              <h3 class="fw-bold mb-0 text-truncate mt-2 text-white">₹{{ monthly_income|floatformat:2|intcomma }}</h3>
+              <h3 class="fw-bold mb-0 text-truncate mt-1 text-white">₹{{ monthly_income|floatformat:2|intcomma }}</h3>
             </div>
-            <div class="icon-circle">
+            <div class="icon-circle shadow-sm">
               <i class="bi bi-cash-stack"></i>
             </div>
           </div>
-          <p class="metric-trend mb-0">
-            {% if income_change_percent > 0 %}
-            <span class="text-success fw-bold me-2">↑ +{{ income_change_percent|floatformat:1 }}%</span>
-            {% elif income_change_percent < 0 %} <span class="text-danger fw-bold me-2">↓ {{
-              income_change_percent|floatformat:1 }}%</span>
-              {% else %}
-              <span class="text-white-50 fw-bold me-2">- {{ income_change_percent|floatformat:1 }}%</span>
-              {% endif %}
-              <span class="text-white-50 small">from last month</span>
-          </p>
+          <div class="mt-3 d-flex align-items-center flex-wrap gap-2">
+            <span class="badge bg-white text-{{ income_trend.color }} px-2 py-1 rounded shadow-sm d-inline-flex align-items-center" style="font-size: 0.75rem;">
+              <i class="{{ income_trend.icon }} me-1" style="font-size: 0.8rem;"></i> {{ income_trend.text }}
+            </span>
+            <span class="text-white text-opacity-75 text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.3px;">vs last period</span>
+          </div>
         </div>
       </div>
     </div>
@@ -341,53 +299,41 @@
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-orange h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
               <p class="metric-label">Monthly Expenses</p>
-              <h3 class="fw-bold mb-0 text-truncate mt-2 text-white">₹{{ monthly_expenses|floatformat:2|intcomma }}</h3>
+              <h3 class="fw-bold mb-0 text-truncate mt-1 text-white">₹{{ monthly_expenses|floatformat:2|intcomma }}</h3>
             </div>
-            <div class="icon-circle">
+            <div class="icon-circle shadow-sm">
               <i class="bi bi-receipt"></i>
             </div>
           </div>
-          <p class="metric-trend mb-0">
-            {% if expense_change_percent > 0 %}
-            <span class="text-success fw-bold me-2">↑ +{{ expense_change_percent|floatformat:1 }}%</span>
-            {% elif expense_change_percent < 0 %} <span class="text-danger fw-bold me-2">↓ {{
-              expense_change_percent|floatformat:1 }}%</span>
-              {% else %}
-              <span class="text-white-50 fw-bold me-2">- {{ expense_change_percent|floatformat:1 }}%</span>
-              {% endif %}
-              <span class="text-white-50 small">from last month</span>
-          </p>
+          <div class="mt-3 d-flex align-items-center flex-wrap gap-2">
+            <span class="badge bg-white text-{{ expense_trend.color }} px-2 py-1 rounded shadow-sm d-inline-flex align-items-center" style="font-size: 0.75rem;">
+              <i class="{{ expense_trend.icon }} me-1" style="font-size: 0.8rem;"></i> {{ expense_trend.text }}
+            </span>
+            <span class="text-white text-opacity-75 text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.3px;">vs last period</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Card 4: Savings -->
+    <!-- Card 4: Lifetime Savings -->
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-purple h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
-              <p class="metric-label">Savings</p>
-              <h3 class="fw-bold mb-0 text-truncate mt-2 text-white">₹{{ available_savings|floatformat:2|intcomma }}
-              </h3>
+              <p class="metric-label">Lifetime Savings</p>
+              <h3 class="fw-bold mb-0 text-truncate mt-1 text-white">₹{{ lifetime_savings|floatformat:2|intcomma }}</h3>
             </div>
-            <div class="icon-circle">
+            <div class="icon-circle shadow-sm">
               <i class="bi bi-piggy-bank"></i>
             </div>
           </div>
-          <p class="metric-trend mb-0">
-            {% if savings_change_percent > 0 %}
-            <span class="text-success fw-bold me-2">↑ +{{ savings_change_percent|floatformat:1 }}%</span>
-            {% elif savings_change_percent < 0 %} <span class="text-danger fw-bold me-2">↓ {{
-              savings_change_percent|floatformat:1 }}%</span>
-              {% else %}
-              <span class="text-white-50 fw-bold me-2">- {{ savings_change_percent|floatformat:1 }}%</span>
-              {% endif %}
-              <span class="text-white-50 small">from last month</span>
-          </p>
+          <div class="mt-3">
+            <span class="text-white text-opacity-75" style="font-size: 0.75rem; letter-spacing: 0.3px;">Overall savings across all transactions</span>
+          </div>
         </div>
       </div>
     </div>
@@ -457,184 +403,69 @@
     </div>
   </div>
 
-  <!-- ========================================
-       ACTION SHORTCUT CARDS
-       Quick access to key user functions
-       ======================================== -->
-  <div class="row g-3 mb-4">
-    <!-- Shortcut 1: Add Expense -->
-    <div class="col-sm-6 col-lg-4">
-      <a href="{% url 'add_expense' %}" class="card card-hover text-decoration-none h-100">
-        <div class="card-body text-center">
-          <i class="bi bi-plus-circle-fill" style="font-size: 2rem; color: #0d6efd;"></i>
-          <p class="fw-semibold mt-2 mb-1">Add Expense</p>
-          <small class="text-muted">Record a new transaction</small>
-        </div>
-      </a>
-    </div>
 
-    <!-- Shortcut 2: View All Expenses -->
-    <div class="col-sm-6 col-lg-4">
-      <a href="{% url 'expense_list' %}" class="card card-hover text-decoration-none h-100">
-        <div class="card-body text-center">
-          <i class="bi bi-list-ul" style="font-size: 2rem; color: #16a34a;"></i>
-          <p class="fw-semibold mt-2 mb-1">View Expenses</p>
-          <small class="text-muted">Browse all transactions</small>
-        </div>
-      </a>
-    </div>
-
-    <!-- Shortcut 3: Download Reports (Functional Phase) -->
-    <div class="col-sm-6 col-lg-4">
-      <div class="card card-hover h-100">
-        <div class="card-body text-center d-flex flex-column justify-content-center">
-          <p class="fw-semibold mb-2"><i class="bi bi-download"
-              style="color: #f59e0b; font-size: 1.5rem; margin-right: 0.5rem"></i> Download Reports</p>
-          <div class="d-flex justify-content-center gap-2 mt-2">
-            <a href="{% url 'download_csv' %}?range={{ current_range }}&start_date={{ start_date }}&end_date={{ end_date }}"
-              class="btn btn-sm btn-outline-success"><i class="bi bi-filetype-csv"></i>
-              CSV</a>
-            <a href="{% url 'download_pdf' %}?range={{ current_range }}&start_date={{ start_date }}&end_date={{ end_date }}"
-              class="btn btn-sm btn-outline-danger"><i class="bi bi-filetype-pdf"></i>
-              PDF</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ========================================
-       AI INSIGHTS & SAVING GOALS (PHASE-2 & 5)
-       Intelligent recommendations and goal tracking
+       AI INSIGHTS
+       Intelligent recommendations based on spending
        ======================================== -->
   <div class="row g-3 mb-4">
     <!-- AI Insights Panel -->
-    <div class="col-lg-6">
+    <div class="col-12">
       <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #6f42c1 !important;">
-        <div class="card-body d-flex flex-column">
-          <div class="d-flex align-items-center mb-3">
-            <div class="bg-purple text-white rounded p-2 me-3 d-flex align-items-center justify-content-center"
-              style="background-color: #6f42c1; width: 40px; height: 40px;">
-              <i class="bi bi-lightbulb-fill fs-5"></i>
+        <div class="card-body py-4 px-4 d-flex flex-column" style="background: linear-gradient(to bottom right, #ffffff, #faf5ff);">
+          <div class="d-flex align-items-center mb-4">
+            <div class="bg-purple text-white shadow-sm rounded p-2 me-3 d-flex align-items-center justify-content-center"
+              style="background: linear-gradient(135deg, #6f42c1, #8b5cf6); width: 48px; height: 48px;">
+              <i class="bi bi-stars fs-4"></i>
             </div>
             <div>
-              <h5 class="card-title mb-0 fw-bold">AI Insights</h5>
-              <small class="text-muted">Smart analysis of your spending</small>
+              <h5 class="card-title mb-0 fw-bold" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Financial Intelligence</h5>
+              <small class="text-muted fw-semibold">AI-driven analysis of your spending patterns</small>
+            </div>
+            <div class="ms-auto d-none d-sm-block">
+              <span class="badge bg-purple bg-opacity-10 px-3 py-2 rounded-pill" style="color: #6f42c1; border: 1px solid rgba(111, 66, 193, 0.2);">
+                <i class="bi bi-robot me-1"></i> Auto-Generated
+              </span>
             </div>
           </div>
 
-          <div class="flex-grow-1 overflow-auto" style="max-height: 280px; padding-right: 5px;">
-            <ul class="list-group list-group-flush">
+          <div class="insights-scroll flex-grow-1" style="max-height: 320px;">
+            <div class="d-flex flex-column gap-3 py-1">
               {% for insight in insights %}
-              <li class="list-group-item bg-transparent px-0 border-light border-opacity-25 py-3">
+              <div class="insight-item p-3">
                 <div class="d-flex align-items-start gap-3">
-                  <div class="mt-1">
+                  <div class="flex-shrink-0 mt-1">
                     {% if insight.type == 'success' %}
-                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                    <div class="d-flex align-items-center justify-content-center rounded-circle icon-success-soft shadow-sm" style="width: 40px; height: 40px;">
+                      <i class="bi bi-arrow-down-right-circle fs-5"></i>
+                    </div>
                     {% elif insight.type == 'warning' %}
-                    <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                    <div class="d-flex align-items-center justify-content-center rounded-circle icon-warning-soft shadow-sm" style="width: 40px; height: 40px;">
+                      <i class="bi bi-exclamation-triangle fs-5"></i>
+                    </div>
                     {% else %}
-                    <i class="bi bi-info-circle-fill text-info fs-5"></i>
+                    <div class="d-flex align-items-center justify-content-center rounded-circle icon-info-soft shadow-sm" style="width: 40px; height: 40px;">
+                      <i class="bi bi-info-circle fs-5"></i>
+                    </div>
                     {% endif %}
                   </div>
                   <div>
-                    <h6 class="fw-bold mb-1">{{ insight.title }}</h6>
-                    <p class="mb-0 text-muted small">{{ insight.message }}</p>
+                    <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">{{ insight.title }}</h6>
+                    <p class="mb-0 text-secondary" style="font-size: 0.85rem; line-height: 1.5;">{{ insight.message }}</p>
                   </div>
                 </div>
-              </li>
+              </div>
               {% empty %}
-              <li class="list-group-item bg-transparent px-0 text-muted py-3 text-center">
-                <i class="bi bi-inbox fs-4 d-block mb-2 opacity-50"></i>
-                No new insights available right now. Keep logging your expenses!
-              </li>
+              <div class="insight-item p-4 text-center">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light mb-3" style="width: 60px; height: 60px;">
+                  <i class="bi bi-inbox fs-3 text-muted"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-1">No pending insights</h6>
+                <p class="text-muted small mb-0">Record more transactions to unlock AI-driven financial intelligence.</p>
+              </div>
               {% endfor %}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Saving Goals Panel -->
-    <div class="col-lg-6">
-      <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #20c997 !important;">
-        <div class="card-body d-flex flex-column">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <div class="d-flex align-items-center">
-              <div class="bg-teal text-white rounded p-2 me-3 d-flex align-items-center justify-content-center"
-                style="background-color: #20c997; width: 40px; height: 40px;">
-                <i class="bi bi-bullseye fs-5"></i>
-              </div>
-              <div>
-                <h5 class="card-title mb-0 fw-bold">Saving Goals</h5>
-                <small class="text-muted">Track your targets</small>
-              </div>
             </div>
-            <a href="{% url 'add_saving_goal' %}" class="btn btn-sm btn-outline-success">
-              <i class="bi bi-plus-lg"></i> Add Goal
-            </a>
-          </div>
-
-          <div class="flex-grow-1 overflow-auto" style="max-height: 280px; padding-right: 5px;">
-            {% for goal in saving_goals %}
-            <div class="goal-item-card mb-3">
-              <!-- Title + Action Icons -->
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                  <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.95rem;">{{ goal.title }}</h6>
-                  <small class="text-muted">
-                    {% if goal.deadline %}
-                    <i class="bi bi-calendar-event me-1"></i>By {{ goal.deadline|date:"M d, Y" }}
-                    {% else %}
-                    <i class="bi bi-infinity me-1"></i>No deadline
-                    {% endif %}
-                  </small>
-                </div>
-                <div class="d-flex gap-1">
-                  <a href="{% url 'deposit_saving_goal' goal.id %}" class="goal-action-btn goal-action-deposit"
-                    title="Deposit Money">
-                    <i class="bi bi-plus-lg"></i>
-                  </a>
-                  <a href="{% url 'edit_saving_goal' goal.id %}" class="goal-action-btn goal-action-edit"
-                    title="Edit Goal">
-                    <i class="bi bi-pencil"></i>
-                  </a>
-                  <a href="{% url 'delete_saving_goal' goal.id %}" class="goal-action-btn goal-action-delete"
-                    title="Delete Goal">
-                    <i class="bi bi-trash"></i>
-                  </a>
-                </div>
-              </div>
-
-              <!-- Amount Row -->
-              <div class="d-flex align-items-baseline gap-1 mb-2">
-                <span class="fw-bold text-success" style="font-size: 1.05rem;">₹{{ goal.saved_amount|floatformat:0|intcomma }}</span>
-                <span class="text-muted small">of</span>
-                <span class="fw-semibold text-muted" style="font-size: 0.92rem;">₹{{ goal.target_amount|floatformat:0|intcomma }}</span>
-              </div>
-
-              <!-- Progress Bar -->
-              <div class="goal-progress-track">
-                <div class="goal-progress-fill-dash {% if goal.progress >= 100 %}done{% endif %}"
-                  style="width: {% if goal.progress > 100 %}100{% else %}{{ goal.progress }}{% endif %}%;">
-                </div>
-              </div>
-              <div class="text-end mt-1">
-                <span class="fw-bold small {% if goal.progress >= 100 %}text-success{% else %}text-primary{% endif %}">
-                  {{ goal.progress }}%
-                </span>
-              </div>
-            </div>
-            {% empty %}
-            <div class="text-center text-muted py-4">
-              <i class="bi bi-bullseye fs-1 d-block mb-3 opacity-25"></i>
-              <p class="fw-semibold mb-1">No saving goals yet</p>
-              <p class="small mb-3">Start setting goals to track your progress.</p>
-              <a href="{% url 'add_saving_goal' %}" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                <i class="bi bi-plus-lg me-1"></i>Add Your First Goal
-              </a>
-            </div>
-            {% endfor %}
           </div>
         </div>
       </div>

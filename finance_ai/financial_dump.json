@@ -1,0 +1,163 @@
+{
+  "incomes": [
+    {
+      "amount": 50000.0,
+      "date": "2026-03-06",
+      "source": "Salary"
+    },
+    {
+      "amount": 25000.0,
+      "date": "2026-02-18",
+      "source": "Freelance"
+    }
+  ],
+  "expenses": [
+    {
+      "amount": 100.0,
+      "date": "2026-03-18",
+      "category": "Others"
+    },
+    {
+      "amount": 100.0,
+      "date": "2026-03-17",
+      "category": "Others"
+    },
+    {
+      "amount": 200.0,
+      "date": "2026-03-16",
+      "category": "Others"
+    },
+    {
+      "amount": 200.0,
+      "date": "2026-03-02",
+      "category": "Food"
+    },
+    {
+      "amount": 1.0,
+      "date": "2026-03-02",
+      "category": "Others"
+    },
+    {
+      "amount": 100.0,
+      "date": "2026-02-27",
+      "category": "Bills"
+    },
+    {
+      "amount": 240.0,
+      "date": "2026-02-26",
+      "category": "Food"
+    },
+    {
+      "amount": 50.0,
+      "date": "2026-02-24",
+      "category": "Travel"
+    },
+    {
+      "amount": 2000.0,
+      "date": "2026-02-24",
+      "category": "Bills"
+    },
+    {
+      "amount": 400.0,
+      "date": "2026-02-24",
+      "category": "Shopping"
+    },
+    {
+      "amount": 500.0,
+      "date": "2026-02-23",
+      "category": "Food"
+    },
+    {
+      "amount": 400.0,
+      "date": "2026-02-23",
+      "category": "Travel"
+    },
+    {
+      "amount": 250.0,
+      "date": "2026-01-26",
+      "category": "Food"
+    },
+    {
+      "amount": 1800.0,
+      "date": "2026-01-20",
+      "category": "Bills"
+    },
+    {
+      "amount": 0.0,
+      "date": "2026-01-15",
+      "category": "Shopping"
+    },
+    {
+      "amount": 120.0,
+      "date": "2026-01-14",
+      "category": "Travel"
+    },
+    {
+      "amount": 300.0,
+      "date": "2026-01-14",
+      "category": "Food"
+    },
+    {
+      "amount": 20000.0,
+      "date": "2026-01-07",
+      "category": "Shopping"
+    },
+    {
+      "amount": 250.0,
+      "date": "2025-12-29",
+      "category": "Travel"
+    },
+    {
+      "amount": 2000.0,
+      "date": "2025-12-26",
+      "category": "Food"
+    },
+    {
+      "amount": 670.0,
+      "date": "2025-12-18",
+      "category": "Food"
+    },
+    {
+      "amount": 2000.0,
+      "date": "2025-12-15",
+      "category": "Bills"
+    },
+    {
+      "amount": 1500.0,
+      "date": "2025-12-12",
+      "category": "Shopping"
+    },
+    {
+      "amount": 970.0,
+      "date": "2025-12-10",
+      "category": "Bills"
+    },
+    {
+      "amount": 450.0,
+      "date": "2025-12-05",
+      "category": "Food"
+    },
+    {
+      "amount": 1000.0,
+      "date": "2025-11-27",
+      "category": "Shopping"
+    },
+    {
+      "amount": 950.0,
+      "date": "2025-11-24",
+      "category": "Bills"
+    },
+    {
+      "amount": 300.0,
+      "date": "2025-11-13",
+      "category": "Food"
+    },
+    {
+      "amount": 2000.0,
+      "date": "2025-11-05",
+      "category": "Food"
+    }
+  ],
+  "total_inc": 75000.0,
+  "total_exp": 38851.0
+}

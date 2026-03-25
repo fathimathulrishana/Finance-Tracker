@@ -147,19 +147,28 @@ def dashboard(request):
 	
 	start_date, end_date, current_month_label = get_date_range(range_type, start_str, end_str)
 
-	# Execute strict constraints globally replacing all former naive '.year .month' metrics.
+	# Execute strict constraints globally manually syncing logic for robust insights.
 	month_expenses = user_expenses.filter(date__gte=start_date, date__lte=end_date)
-	total_month = month_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	monthly_expenses = month_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	total_month = monthly_expenses
 	count_month = month_expenses.count()
 
 	month_incomes = user_incomes.filter(date__gte=start_date, date__lte=end_date)
 	monthly_income = month_incomes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-	all_time_expense = user_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-	all_time_income = user_incomes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	all_time_expense = user_expenses.filter(date__lte=end_date).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	all_time_income = user_incomes.filter(date__lte=end_date).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 	total_balance = all_time_income - all_time_expense
 
-	savings = monthly_income - total_month
+	# B) Global Data (for Lifetime Savings)
+	total_income_all = Income.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or 0
+	total_expense_all = Expense.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or 0
+	lifetime_savings = total_income_all - total_expense_all
+	
+	# C) Global Data (for Available Balance - Card 1)
+	total_saved_goals = SavingGoal.objects.filter(user=request.user).aggregate(total=Sum('saved_amount'))['total'] or Decimal('0.00')
+	net_worth = lifetime_savings
+	available_balance = net_worth - total_saved_goals
 
 	# MONTH-TO-MONTH COMPARISON
 	duration = (end_date - start_date).days + 1
@@ -176,32 +185,32 @@ def dashboard(request):
 	prev_all_time_income = user_incomes.filter(date__lte=prev_end_date).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 	prev_total_balance = prev_all_time_income - prev_all_time_expense
 
-	prev_savings = prev_monthly_income - prev_monthly_expense
+	prev_savings = Decimal('0.00')
 
-	def get_percent_and_icon(current, previous):
-		if previous:
+	def get_percent_dict(current, previous):
+		if previous and previous > 0:
 			pct = ((current - previous) / previous) * 100
+			if pct > 0:
+				return {'color': "success", 'icon': "bi bi-arrow-up-right", 'text': f"+{abs(pct):.1f}%"}
+			elif pct < 0:
+				return {'color': "danger", 'icon': "bi bi-arrow-down-right", 'text': f"-{abs(pct):.1f}%"}
+			else:
+				return {'color': "secondary", 'icon': "bi bi-dash", 'text': "0%"}
 		else:
-			pct = Decimal('100.00') if current > 0 else Decimal('0.00')
-		
-		# Display: Green ↑ if increase, Red ↓ if decrease
-		if pct > 0:
-			icon = "bi bi-arrow-up text-success"
-		elif pct < 0:
-			icon = "bi bi-arrow-down text-danger"
-		else:
-			icon = "bi bi-dash text-secondary"
-			
-		return abs(pct), icon
+			if current > 0:
+				return {'color': "success", 'icon': "bi bi-graph-up-arrow", 'text': "New"}
+			elif current < 0:
+				return {'color': "danger", 'icon': "bi bi-graph-down-arrow", 'text': "New"}
+			else:
+				return {'color': "secondary", 'icon': "bi bi-dash", 'text': "Missing"}
 
-	balance_change_percent, balance_trend_icon = get_percent_and_icon(total_balance, prev_total_balance)
-	income_change_percent, income_trend_icon = get_percent_and_icon(monthly_income, prev_monthly_income)
-	expense_change_percent, expense_trend_icon = get_percent_and_icon(total_month, prev_monthly_expense)
-	savings_change_percent, savings_trend_icon = get_percent_and_icon(savings, prev_savings)
-	monthly_expenses = total_month
+	balance_trend = get_percent_dict(total_balance, prev_total_balance)
+	income_trend = get_percent_dict(monthly_income, prev_monthly_income)
+	expense_trend = get_percent_dict(monthly_expenses, prev_monthly_expense)
+	savings_trend = get_percent_dict(lifetime_savings, prev_savings)
 
 	if monthly_income > 0:
-		savings_rate = (savings / monthly_income) * 100
+		savings_rate = (lifetime_savings / monthly_income) * 100
 	else:
 		savings_rate = 0
 
@@ -268,32 +277,18 @@ def dashboard(request):
 	saving_goals = SavingGoal.objects.filter(user=request.user)
 	insights = generate_insights(request.user, start_date=start_date, end_date=end_date)
 
-	total_income = month_incomes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-	total_expenses = month_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-	
-	total_savings = total_income - total_expenses
-	goal_allocated = saving_goals.aggregate(total=Sum('saved_amount'))['total'] or Decimal('0.00')
-	
-	available_savings = total_savings - goal_allocated
-	if available_savings < Decimal('0.00'):
-		available_savings = Decimal('0.00')
-
 	context = {
 		'total_month': total_month,
 		'count_month': count_month,
 		'monthly_income': monthly_income,
 		'monthly_expenses': monthly_expenses,
 		'total_balance': total_balance,
-		'savings': savings,
-		'available_savings': available_savings,
-		'balance_change_percent': balance_change_percent,
-		'income_change_percent': income_change_percent,
-		'expense_change_percent': expense_change_percent,
-		'savings_change_percent': savings_change_percent,
-		'balance_trend_icon': balance_trend_icon,
-		'income_trend_icon': income_trend_icon,
-		'expense_trend_icon': expense_trend_icon,
-		'savings_trend_icon': savings_trend_icon,
+		'available_balance': available_balance,
+		'lifetime_savings': lifetime_savings,
+		'balance_trend': balance_trend,
+		'income_trend': income_trend,
+		'expense_trend': expense_trend,
+		'savings_trend': savings_trend,
 		'savings_rate': round(savings_rate, 1),
 		'health_score': health_score,
 		'health_color': health_color,
@@ -336,10 +331,39 @@ def expense_list(request):
 		selected_month = form.cleaned_data['month']
 		qs = qs.filter(date__year=selected_month.year, date__month=selected_month.month)
 
+	# 1. Total Expense (over the filtered queryset)
+	total_expense = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	
+	# 2. This Month / Filtered Month Expense
+	today = date.today()
+	if selected_month:
+		this_month_qs = qs
+		month_label = f"Expense ({selected_month.strftime('%b %Y')})"
+	else:
+		this_month_qs = qs.filter(date__year=today.year, date__month=today.month)
+		month_label = "This Month Expense"
+
+	this_month_expense = this_month_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+	# 3. Unique Category Count (unique categories in qs)
+	unique_category_count = qs.values('category').distinct().count()
+
+	# 4. Highest Expense Category
+	highest_cat_data = qs.values('category').annotate(cat_total=Sum('amount')).order_by('-cat_total').first()
+	if highest_cat_data:
+		highest_expense_category = f"{highest_cat_data['category']} (₹{highest_cat_data['cat_total']:,.0f})"
+	else:
+		highest_expense_category = None
+
 	context = {
 		'expenses': qs.order_by('-date', '-id'),
 		'form': form,
 		'selected_month': selected_month,
+		'total_expense': total_expense,
+		'this_month_expense': this_month_expense,
+		'month_label': month_label,
+		'unique_category_count': unique_category_count,
+		'highest_expense_category': highest_expense_category,
 	}
 	return render(request, 'expense_list.html', context)
 
@@ -468,10 +492,39 @@ def income_list(request):
 		selected_month = form.cleaned_data['month']
 		qs = qs.filter(date__year=selected_month.year, date__month=selected_month.month)
 
+	# 1. Total Income (over the filtered queryset)
+	total_income = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+	
+	# 2. This Month / Filtered Month Income
+	today = date.today()
+	if selected_month:
+		this_month_qs = qs
+		month_label = f"Income ({selected_month.strftime('%b %Y')})"
+	else:
+		this_month_qs = qs.filter(date__year=today.year, date__month=today.month)
+		month_label = "This Month Income"
+
+	this_month_income = this_month_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+	# 3. Income Sources Count (unique sources in qs)
+	unique_sources_count = qs.values('source').distinct().count()
+
+	# 4. Highest Income Source
+	highest_source_data = qs.values('source').annotate(src_total=Sum('amount')).order_by('-src_total').first()
+	if highest_source_data:
+		highest_income_source = f"{highest_source_data['source']} (₹{highest_source_data['src_total']:,.0f})"
+	else:
+		highest_income_source = None
+
 	context = {
 		'incomes': qs.order_by('-date', '-id'),
 		'form': form,
 		'selected_month': selected_month,
+		'total_income': total_income,
+		'this_month_income': this_month_income,
+		'month_label': month_label,
+		'unique_sources_count': unique_sources_count,
+		'highest_income_source': highest_income_source,
 	}
 	return render(request, 'income_list.html', context)
 
@@ -596,7 +649,7 @@ def download_expenses_pdf(request):
 	elements.append(Spacer(1, 12))
 	
 	data = [['Date', 'Category', 'Amount (Rs)', 'Description']]
-	total_amount = 0.0
+	total_amount = Decimal('0.00')
 	
 	for expense in expenses:
 		data.append([
@@ -721,3 +774,39 @@ def deposit_saving_goal(request, pk: int):
 		'goal': goal,
 		'available_savings': available_savings
 	})
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def goals_dashboard(request):
+	"""Dedicated Goals Dashboard - lists all saving goals with stats."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	saving_goals = SavingGoal.objects.filter(user=request.user)
+
+	# Summary stats
+	total_goals = saving_goals.count()
+	completed_goals = sum(1 for g in saving_goals if g.progress >= 100)
+	in_progress_goals = total_goals - completed_goals
+
+	total_saved   = saving_goals.aggregate(s=Sum('saved_amount'))['s'] or Decimal('0.00')
+	total_target  = saving_goals.aggregate(s=Sum('target_amount'))['s'] or Decimal('0.00')
+	overall_pct   = round((total_saved / total_target) * 100, 1) if total_target > 0 else 0.0
+
+	# Available savings (all-time income - all-time expenses - already deposited)
+	all_income   = Income.objects.filter(user=request.user).aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
+	all_expenses = Expense.objects.filter(user=request.user).aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
+	goal_allocated = saving_goals.aggregate(s=Sum('saved_amount'))['s'] or Decimal('0.00')
+	available_savings = max(all_income - all_expenses - goal_allocated, Decimal('0.00'))
+
+	context = {
+		'saving_goals': saving_goals,
+		'total_goals': total_goals,
+		'completed_goals': completed_goals,
+		'in_progress_goals': in_progress_goals,
+		'total_saved': total_saved,
+		'total_target': total_target,
+		'overall_pct': overall_pct,
+		'available_savings': available_savings,
+	}
+	return render(request, 'goals_dashboard.html', context)

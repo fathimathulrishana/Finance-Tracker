@@ -1,97 +1,284 @@
 {% extends 'base.html' %}
 {% load humanize %}
 {% block title %}Expenses | Finance Tracker{% endblock %}
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h2 class="mb-1"><i class="bi bi-receipt"></i> Expenses</h2>
-    <p class="text-muted mb-0">Track and manage all your expenses in one place.</p>
-  </div>
-  <a class="btn btn-primary fw-600" href="/expenses/add/"><i class="bi bi-plus-circle"></i> Add Expense</a>
-</div>
 
-<div class="card mb-4">
-  <div class="card-body">
+{% block content %}
+<div class="goals-page"> <!-- reuse page wrapper for consistency -->
+
+  <!-- ============================
+       PAGE HERO HEADER
+       ============================ -->
+  <div class="goals-hero">
+    <div class="goals-hero-content">
+      <div class="hero-left">
+        <div class="hero-icon-wrap">
+          <i class="bi bi-receipt"></i>
+        </div>
+        <div>
+          <p class="hero-eyebrow">Financial Tracking</p>
+          <h1 class="hero-title">Expenses</h1>
+          <p class="hero-sub">Track and manage all your expense records</p>
+        </div>
+      </div>
+      <a href="/expenses/add/" class="btn-add-goal">
+        <i class="bi bi-plus-lg"></i> Add Expense
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================
+       SUMMARY STAT CARDS
+       ============================ -->
+  <div class="stat-grid">
+
+    <div class="stat-card stat-red">
+      <div class="stat-icon-wrap"><i class="bi bi-wallet2"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Total Expense</span>
+        <span class="stat-value">₹{{ total_expense|default:"0"|intcomma }}</span>
+        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
+      </div>
+    </div>
+
+    <div class="stat-card stat-orange">
+      <div class="stat-icon-wrap"><i class="bi bi-calendar2-dash-fill"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">{{ month_label|default:"This Month Expense" }}</span>
+        <span class="stat-value">₹{{ this_month_expense|default:"0"|intcomma }}</span>
+        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
+      </div>
+    </div>
+
+    <div class="stat-card stat-purple">
+      <div class="stat-icon-wrap"><i class="bi bi-tags-fill"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Category Count</span>
+        <span class="stat-value">{{ unique_category_count|default:"0" }}</span>
+        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
+      </div>
+    </div>
+
+    <div class="stat-card stat-teal">
+      <div class="stat-icon-wrap"><i class="bi bi-graph-down-arrow"></i></div>
+      <div class="stat-info flex-grow-1 overflow-hidden">
+        <span class="stat-label">Highest Expense Category</span>
+        {% if highest_expense_category %}
+        <span class="stat-value text-truncate d-block" style="font-size: 1.2rem; max-width: 100%;" title="{{ highest_expense_category }}">{{ highest_expense_category }}</span>
+        {% else %}
+        <span class="stat-value d-block" style="font-size: 1.2rem;">-</span>
+        {% endif %}
+        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================
+       FILTER SECTION
+       ============================ -->
+  <div class="filter-card">
     <form method="get" class="row g-3 align-items-end">
-      <div class="col-md-4">
-        <label class="form-label fw-600">Filter by Month</label>
+      <div class="col-md-4 position-relative">
+        <label class="form-label fw-600 custom-label">Filter by Month</label>
         {{ form.month }}
       </div>
-      <div class="col-md-auto">
-        <button class="btn btn-primary" type="submit"><i class="bi bi-funnel"></i> Filter</button>
-        <a class="btn btn-outline-secondary" href="/expenses/"><i class="bi bi-arrow-clockwise"></i> Clear</a>
+      <div class="col-md-auto d-flex gap-2">
+        <button class="btn-filter" type="submit"><i class="bi bi-funnel-fill"></i> Filter</button>
+        <a class="btn-clear" href="/expenses/"><i class="bi bi-arrow-clockwise"></i> Clear</a>
       </div>
     </form>
   </div>
+
+  <!-- ============================
+       EXPENSE DATA TABLE
+       ============================ -->
+  {% if expenses %}
+  <div class="income-table-card table-responsive mb-4">
+    <table class="table income-table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th class="text-end">Amount</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td class="text-nowrap text-muted fw-medium"><i class="bi bi-calendar-event me-1"></i> {{ e.date }}</td>
+          <td>
+            <span class="source-badge 
+              {% if e.category == 'Food' %}badge-food
+              {% elif e.category == 'Travel' %}badge-travel
+              {% elif e.category == 'Shopping' %}badge-shopping
+              {% elif e.category == 'Bills' %}badge-bills
+              {% else %}badge-other{% endif %}">
+              <i class="bi bi-{% if e.category == 'Food' %}cup-hot{% elif e.category == 'Travel' %}car-front{% elif e.category == 'Shopping' %}bag{% elif e.category == 'Bills' %}credit-card{% else %}tag{% endif %}"></i>
+              {{ e.category }}
+            </span>
+          </td>
+          <td class="text-muted" style="max-width: 250px;"><span class="text-truncate d-inline-block w-100">{{ e.description|default:"-" }}</span></td>
+          <td class="text-end fw-bold text-danger" style="font-size: 1.05rem;">
+            ₹{{ e.amount|floatformat:2|intcomma }}
+            {% if e.is_anomaly %}
+              <br><span class="badge bg-danger mt-1" style="font-size: 0.65rem;"><i class="bi bi-exclamation-triangle"></i> Unusual</span>
+            {% endif %}
+          </td>
+          <td class="text-end text-nowrap">
+            <div class="d-flex justify-content-end gap-2">
+              <a href="/expenses/{{ e.id }}/edit/" class="btn-icon btn-icon-edit" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form action="/expenses/{{ e.id }}/delete/" method="post" class="d-inline m-0 p-0" title="Delete">
+                {% csrf_token %}
+                <button class="btn-icon btn-icon-delete" onclick="return confirm('Are you sure you want to delete this expense?')" type="submit">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <!-- ============================
+       EMPTY STATE
+       ============================ -->
+  <div class="goals-empty">
+    <div class="empty-anim">
+      <i class="bi bi-inbox empty-icon"></i>
+    </div>
+    <h2 class="empty-title">No expense records yet</h2>
+    <p class="empty-sub">Start tracking your spending by adding your first expense record.</p>
+    <a href="/expenses/add/" class="btn-add-goal">
+      <i class="bi bi-plus-lg"></i> Add Expense
+    </a>
+  </div>
+  {% endif %}
+
 </div>
 
-<div class="card">
-  <div class="card-header bg-white border-bottom">
-    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Expense Records</h5>
-  </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Date</th>
-            <th>Category</th>
-            <th class="text-end">Amount</th>
-            <th>Description</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for e in expenses %}
-          <tr>
-            <td><small class="text-muted">{{ e.date }}</small></td>
-            <td>
-              <span
-                class="badge {% if e.category == 'Food' %}bg-danger{% elif e.category == 'Travel' %}bg-info{% elif e.category == 'Shopping' %}bg-warning text-dark{% elif e.category == 'Bills' %}bg-danger{% else %}bg-secondary{% endif %}">
-                <i
-                  class="bi bi-{% if e.category == 'Food' %}cup-hot{% elif e.category == 'Travel' %}car-front{% elif e.category == 'Shopping' %}bag{% elif e.category == 'Bills' %}credit-card{% else %}tag{% endif %}"></i>
-                {{ e.category }}
-              </span>
-              {% if e.is_auto_categorized %}
-              {% if e.is_ml_predicted %}
-              <span class="badge bg-purple text-white ms-1" style="background-color: #6f42c1; font-size: 0.65rem;"
-                title="Predicted by Machine Learning Model"><i class="bi bi-cpu"></i> ML Predicted</span>
-              {% else %}
-              <span class="badge bg-success bg-opacity-75 ms-1" style="font-size: 0.65rem;"
-                title="Rule Based category"><i class="bi bi-magic"></i> Rule Based</span>
-              {% endif %}
-              {% endif %}
-            </td>
-            <td class="text-end fw-600 text-truncate" style="max-width: 150px;">
-              ₹{{ e.amount|floatformat:2|intcomma }}
-              {% if e.is_anomaly %}
-              <br><span class="badge bg-danger mt-1" style="font-size: 0.65rem;"><i
-                  class="bi bi-exclamation-triangle"></i> Unusual</span>
-              {% endif %}
-            </td>
-            <td><small>{{ e.description|truncatewords:10 }}</small></td>
-            <td class="text-end">
-              <a class="btn btn-sm btn-outline-primary" href="/expenses/{{ e.id }}/edit/" title="Edit"><i
-                  class="bi bi-pencil"></i></a>
-              <form action="/expenses/{{ e.id }}/delete/" method="post" class="d-inline" title="Delete">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-outline-danger"
-                  onclick="return confirm('Are you sure you want to delete this expense?')" type="submit"><i
-                    class="bi bi-trash"></i></button>
-              </form>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="text-center py-5">
-              <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-              <p class="text-muted mt-3">No expenses found. <a href="/expenses/add/">Add your first expense</a></p>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+<!-- ============================
+     STYLES
+     ============================ -->
+<style>
+  /* Reuse core styles from goals dashboard */
+  .goals-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1rem 4rem;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .goals-hero {
+    background: linear-gradient(135deg, #0f4c81 0%, #1e73ff 60%, #20c997 100%);
+    border-radius: 20px;
+    padding: 2.2rem 2.4rem;
+    margin-bottom: 2rem;
+    color: #fff;
+  }
+  .goals-hero-content {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.2rem;
+  }
+  .hero-left { display: flex; align-items: center; gap: 1.2rem; }
+  .hero-icon-wrap {
+    width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 16px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0;
+  }
+  .hero-eyebrow { font-size: 0.75rem; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.75; margin-bottom: 0.15rem; }
+  .hero-title   { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.03em; margin: 0 0 0.1rem; }
+  .hero-sub     { font-size: 0.9rem; opacity: 0.8; margin: 0; }
+
+  .btn-add-goal {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: #fff; color: #0f4c81;
+    font-weight: 600; font-size: 0.9rem;
+    padding: 0.65rem 1.4rem; border-radius: 50px; text-decoration: none; border: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15); white-space: nowrap;
+  }
+  .btn-add-goal:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); color: #0f4c81; }
+
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;
+  }
+  .stat-card {
+    border-radius: 16px; padding: 1.5rem; color: #fff;
+    display: flex; align-items: flex-start; gap: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  
+  .stat-red    { background: linear-gradient(135deg, #dc2626, #f87171); }
+  .stat-orange { background: linear-gradient(135deg, #ea580c, #fb923c); }
+  .stat-purple { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
+  .stat-teal   { background: linear-gradient(135deg, #0d9488, #2dd4bf); }
+
+  .stat-icon-wrap {
+    width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;
+  }
+  .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; display: block; margin-bottom: 0.3rem; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+
+  .filter-card {
+    background: #fff; border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #f1f5f9;
+  }
+  .custom-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 0.4rem; }
+  .btn-filter, .btn-clear {
+    padding: 0.5rem 1.2rem; border-radius: 8px; font-weight: 500; font-size: 0.9rem;
+    display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; border: none;
+  }
+  .btn-filter { background: #3b82f6; color: #fff; box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
+  .btn-filter:hover { background: #2563eb; transform: translateY(-1px); }
+  .btn-clear { background: #f1f5f9; color: #475569; }
+  .btn-clear:hover { background: #e2e8f0; color: #1e293b; }
+
+  .income-table-card {
+    background: #fff; border-radius: 16px; border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.03); overflow: hidden;
+  }
+  .income-table th {
+    background: #f8fafc; color: #475569; font-weight: 600; font-size: 0.85rem;
+    text-transform: uppercase; letter-spacing: 0.5px; padding: 1rem 1.5rem; border-bottom: 2px solid #e2e8f0;
+  }
+  .income-table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .income-table tr:hover td { background-color: #fcfcfd; }
+  .income-table tr:last-child td { border-bottom: none; }
+
+  .source-badge {
+    padding: 0.35rem 0.8rem; border-radius: 50px; font-size: 0.8rem; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+  }
+  .badge-food    { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+  .badge-travel  { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
+  .badge-shopping { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+  .badge-bills   { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  .badge-other   { background: #f1f5f9; color: #475569; }
+
+  .btn-icon {
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.2s; background: transparent; cursor: pointer;
+  }
+  .btn-icon-edit { color: #3b82f6; }
+  .btn-icon-edit:hover { background: #eff6ff; }
+  .btn-icon-delete { color: #ef4444; }
+  .btn-icon-delete:hover { background: #fef2f2; }
+
+  .goals-empty { text-align: center; padding: 4rem 1rem; background: #fff; border-radius: 16px; border: 1px dashed #cbd5e1; }
+  .empty-icon { font-size: 4rem; color: #94a3b8; }
+  .empty-title { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin-top: 1rem; }
+  .empty-sub { color: #64748b; margin-bottom: 1.5rem; }
+  
+  /* Select2 customizations for the filter dropdown */
+  .select2-container--bootstrap-5 .select2-selection {
+    border: 1px solid #e2e8f0 !important; border-radius: 8px !important; padding: 0.375rem 0.75rem; height: auto !important;
+  }
+</style>
 {% endblock %}

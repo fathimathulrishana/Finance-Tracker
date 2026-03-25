@@ -1,220 +1,108 @@
 {% extends 'base.html' %}
 {% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Income | Finance Tracker{% endblock %}
-{% block content %}
 
-<!-- ========================================
-     PAGE HEADER
-     Professional header matching User Dashboard style
-     ======================================== -->
-<div class="container py-4">
-  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-    <div>
-      <p class="text-uppercase small text-muted mb-1">
-        <i class="bi bi-{% if is_edit %}pencil-square{% else %}plus-circle{% endif %}"></i>
-        {% if is_edit %}Modify Income{% else %}Record Income{% endif %}
-      </p>
-      <h1 class="fw-bold mb-2">{% if is_edit %}Edit Income{% else %}Add New Income{% endif %}</h1>
-      <p class="text-muted mb-0">{% if is_edit %}Update your income details{% else %}Quickly record your incoming
-        funds{% endif %}</p>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'income_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to
-        Income</a>
+{% block content %}
+<div class="goals-page">
+
+  <!-- ============================
+       PAGE HERO HEADER
+       ============================ -->
+  <div class="goals-hero">
+    <div class="goals-hero-content">
+      <div class="hero-left">
+        <div class="hero-icon-wrap">
+          <i class="bi bi-wallet2"></i>
+        </div>
+        <div>
+          <p class="hero-eyebrow">{% if is_edit %}Modify Record{% else %}New Record{% endif %}</p>
+          <h1 class="hero-title">{% if is_edit %}Edit Income{% else %}Add Income{% endif %}</h1>
+          <p class="hero-sub">Record your income in a clean and organized way</p>
+        </div>
+      </div>
+      <a href="{% url 'income_list' %}" class="btn-add-goal" style="background: rgba(255,255,255,0.9); color: #0f4c81;">
+        <i class="bi bi-arrow-left"></i> Back to Income
+      </a>
     </div>
   </div>
 
-  <!-- ========================================
-       CSS STYLES
-       Consistent with User Dashboard styling
-       ======================================== -->
-  <style>
-    /* Card styling */
-    .form-card {
-      border: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .form-card .card-body {
-      padding: 2.5rem;
-    }
-
-    /* Form field styling */
-    .form-control:focus {
-      border-color: #0d6efd;
-      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
-    }
-
-    .form-select:focus {
-      border-color: #0d6efd;
-      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
-    }
-
-    /* Input labels */
-    .form-label {
-      font-weight: 600;
-      color: #2c3e50;
-      margin-bottom: 0.7rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    /* Required field indicator */
-    .required-indicator {
-      color: #dc3545;
-      font-weight: bold;
-    }
-
-    /* Helper text */
-    .form-text {
-      font-size: 0.85rem;
-      color: #6c757d;
-      margin-top: 0.4rem;
-    }
-
-    /* Error styling */
-    .error-message {
-      color: #dc3545;
-      font-size: 0.85rem;
-      margin-top: 0.4rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    /* Button styling */
-    .btn-submit {
-      padding: 0.7rem 1.5rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      transition: all 0.2s ease;
-    }
-
-    .btn-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
-    }
-
-    /* Form section separator */
-    .form-section {
-      margin-bottom: 2rem;
-    }
-
-    .form-section:last-of-type {
-      margin-bottom: 0;
-    }
-
-    /* Icon styling in form */
-    .form-label i {
-      color: #0d6efd;
-      font-size: 1rem;
-    }
-  </style>
-
-  <!-- ========================================
+  <!-- ============================
        FORM CONTAINER
-       Card-based form with consistent styling
-       ======================================== -->
+       ============================ -->
   <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="card form-card">
-        <div class="card-body">
+    <div class="col-md-9 col-lg-7 col-xl-6">
+      <div class="income-form-card">
+        <div class="card-body p-4 p-md-5">
           <form method="post" novalidate>
             {% csrf_token %}
 
-            <!-- ========================================
-                 FORM SECTION 1: SOURCE
-                 ======================================== -->
-            <div class="form-section">
-              <label for="{{ form.source.id_for_label }}" class="form-label">
-                <i class="bi bi-briefcase"></i> Source
-                <span class="required-indicator">*</span>
+            <!-- SOURCE -->
+            <div class="mb-4">
+              <label for="{{ form.source.id_for_label }}" class="custom-form-label">
+                Source <span class="text-danger">*</span>
               </label>
-              <div class="input-group">
-                <span class="input-group-text bg-light border-0" style="color: #0d6efd;">
-                  <i class="bi bi-arrow-down-right-circle"></i>
-                </span>
+              <div class="input-group custom-input-group">
+                <span class="input-group-text"><i class="bi bi-briefcase"></i></span>
                 {{ form.source }}
               </div>
               {% if form.source.errors %}
-              <div class="error-message">
-                <i class="bi bi-exclamation-circle"></i>
-                <span>{{ form.source.errors.0 }}</span>
-              </div>
+              <div class="form-error"><i class="bi bi-exclamation-circle"></i> {{ form.source.errors.0 }}</div>
               {% endif %}
-              <small class="form-text">Select the source of this income</small>
+              <div class="form-help">e.g., Salary, Freelance, Investment</div>
             </div>
 
-            <!-- ========================================
-                 FORM SECTION 2: AMOUNT
-                 ======================================== -->
-            <div class="form-section">
-              <label for="{{ form.amount.id_for_label }}" class="form-label">
-                <i class="bi bi-cash-coin"></i> Amount
-                <span class="required-indicator">*</span>
+            <!-- AMOUNT -->
+            <div class="mb-4">
+              <label for="{{ form.amount.id_for_label }}" class="custom-form-label">
+                Amount <span class="text-danger">*</span>
               </label>
-              <div class="input-group">
-                <span class="input-group-text bg-light border-0" style="color: #16a34a; font-weight: 600;">₹</span>
+              <div class="input-group custom-input-group">
+                <span class="input-group-text fw-bold text-success fs-5">₹</span>
                 {{ form.amount }}
               </div>
               {% if form.amount.errors %}
-              <div class="error-message">
-                <i class="bi bi-exclamation-circle"></i>
-                <span>{{ form.amount.errors.0 }}</span>
-              </div>
+              <div class="form-error"><i class="bi bi-exclamation-circle"></i> {{ form.amount.errors.0 }}</div>
               {% endif %}
-              <small class="form-text">Enter the income amount </small>
+              <div class="form-help">Enter the income amount (e.g., 50000)</div>
             </div>
 
-            <!-- ========================================
-                 FORM SECTION 3: DESCRIPTION
-                 ======================================== -->
-            <div class="form-section">
-              <label for="{{ form.description.id_for_label }}" class="form-label">
-                <i class="bi bi-chat-left-text"></i> Description
-                <span style="font-size: 0.75rem; color: #6c757d; font-weight: normal;">(Optional)</span>
+            <!-- DESCRIPTION -->
+            <div class="mb-4">
+              <label for="{{ form.description.id_for_label }}" class="custom-form-label">
+                Description <span class="fw-normal text-muted small">(Optional)</span>
               </label>
-              {{ form.description }}
+              <div class="input-group custom-input-group">
+                <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                {{ form.description }}
+              </div>
               {% if form.description.errors %}
-              <div class="error-message">
-                <i class="bi bi-exclamation-circle"></i>
-                <span>{{ form.description.errors.0 }}</span>
-              </div>
+              <div class="form-error"><i class="bi bi-exclamation-circle"></i> {{ form.description.errors.0 }}</div>
               {% endif %}
-              <small class="form-text">Add notes about this income</small>
+              <div class="form-help">Add notes about this income source</div>
             </div>
 
-            <!-- ========================================
-                 FORM SECTION 3.5: DATE
-                 ======================================== -->
-            <div class="form-section">
-              <label for="{{ form.date.id_for_label }}" class="form-label">
-                <i class="bi bi-calendar-event"></i> Income Date
-                <span style="font-size: 0.75rem; color: #6c757d; font-weight: normal;">(Optional)</span>
+            <!-- DATE -->
+            <div class="mb-4">
+              <label for="{{ form.date.id_for_label }}" class="custom-form-label">
+                Income Date <span class="fw-normal text-muted small">(Optional)</span>
               </label>
-              {{ form.date }}
-              {% if form.date.errors %}
-              <div class="error-message">
-                <i class="bi bi-exclamation-circle"></i>
-                <span>{{ form.date.errors.0 }}</span>
+              <div class="input-group custom-input-group">
+                <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                {{ form.date }}
               </div>
+              {% if form.date.errors %}
+              <div class="form-error"><i class="bi bi-exclamation-circle"></i> {{ form.date.errors.0 }}</div>
               {% endif %}
-              <small class="form-text">Defaults to today if left blank</small>
+              <div class="form-help">Defaults to today if left blank</div>
             </div>
 
-            <!-- ========================================
-                 ACTION BUTTONS
-                 Primary and secondary actions
-                 ======================================== -->
-            <div class="d-grid gap-2 d-sm-flex pt-3 border-top">
-              <button class="btn btn-primary btn-submit flex-grow-1" type="submit">
-                <i class="bi bi-check-circle"></i>
-                {% if is_edit %}Update Income{% else %}Save Income{% endif %}
+            <!-- SUBMIT BUTTON -->
+            <div class="mt-5 text-center">
+              <button class="btn-gradient-submit w-100" type="submit">
+                <i class="bi bi-{% if is_edit %}check2-circle{% else %}plus-lg{% endif %} me-2"></i>
+                {% if is_edit %}Update Income{% else %}Add Income{% endif %}
               </button>
-              <a href="{% url 'income_list' %}" class="btn btn-outline-secondary btn-submit">
-                <i class="bi bi-arrow-left"></i> Cancel
-              </a>
             </div>
+
           </form>
         </div>
       </div>
@@ -222,4 +110,147 @@
   </div>
 
 </div>
+
+<!-- ============================
+     STYLES
+     ============================ -->
+<style>
+  /* Reuse core styles from goals/income dashboard */
+  .goals-page { max-width: 1100px; margin: 0 auto; padding: 0 1rem 4rem; font-family: 'Poppins', sans-serif; }
+  
+  .goals-hero {
+    background: linear-gradient(135deg, #0f4c81 0%, #1e73ff 60%, #20c997 100%);
+    border-radius: 20px; padding: 2.2rem 2.4rem; margin-bottom: 2rem; color: #fff;
+  }
+  .goals-hero-content { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.2rem; }
+  .hero-left { display: flex; align-items: center; gap: 1.2rem; }
+  .hero-icon-wrap {
+    width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 16px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0;
+  }
+  .hero-eyebrow { font-size: 0.75rem; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.75; margin-bottom: 0.15rem; }
+  .hero-title   { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.03em; margin: 0 0 0.1rem; }
+  .hero-sub     { font-size: 0.9rem; opacity: 0.8; margin: 0; }
+
+  .btn-add-goal {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-weight: 600; font-size: 0.9rem;
+    padding: 0.65rem 1.4rem; border-radius: 50px; text-decoration: none; border: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15); white-space: nowrap;
+  }
+  .btn-add-goal:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+  /* Form Container */
+  .income-form-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08); /* Soft large shadow */
+    overflow: hidden;
+    margin: 0 auto;
+    max-width: 600px;
+  }
+
+  /* Form Elements */
+  .custom-form-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #334155;
+    margin-bottom: 0.55rem;
+    display: block;
+  }
+  .form-help {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 0.45rem;
+  }
+  .form-error {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-top: 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+  }
+
+  .custom-input-group {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    display: flex;
+  }
+  .custom-input-group:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  }
+
+  .custom-input-group .input-group-text {
+    background: #f8fafc;
+    border: none;
+    color: #64748b;
+    padding: 0.85rem 1.25rem;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* Input/Select/Textarea styles - overriding django-rendered inputs */
+  .custom-input-group input, 
+  .custom-input-group select,
+  .custom-input-group textarea {
+    border: none !important;
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    color: #1e293b;
+    background: transparent;
+    box-shadow: none !important;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+  .custom-input-group input:focus, 
+  .custom-input-group select:focus,
+  .custom-input-group textarea:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    background: #fff;
+  }
+  .custom-input-group input::placeholder,
+  .custom-input-group textarea::placeholder {
+    color: #94a3b8;
+  }
+
+  /* Submit Button */
+  .btn-gradient-submit {
+    background: linear-gradient(135deg, #1e73ff 0%, #20c997 100%);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 50px; /* Pill style */
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 16px rgba(30, 115, 255, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-gradient-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(30, 115, 255, 0.35);
+    color: #fff;
+  }
+  .btn-gradient-submit:active {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(30, 115, 255, 0.3);
+  }
+
+  @media (max-width: 640px) {
+    .goals-hero { padding: 1.5rem 1.2rem; margin-bottom: 1.5rem; }
+    .hero-title { font-size: 1.5rem; }
+    .income-form-card .card-body { padding: 1.5rem; }
+  }
+</style>
 {% endblock %}

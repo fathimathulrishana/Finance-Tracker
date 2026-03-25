@@ -176,3 +176,13 @@ class Budget(models.Model):
 
     def __str__(self):
         return f"{self.user.username} | {self.category}: ₹{self.monthly_budget}/month"
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    currency = models.CharField(max_length=10, default='INR')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"

@@ -163,7 +163,12 @@
                   <i class="bi {{ item.icon }}"></i>
                 </div>
                 <div>
-                  <div class="fw-semibold" style="font-size:0.95rem;">{{ item.obj.category }}</div>
+                  <div class="fw-semibold d-flex align-items-center gap-2" style="font-size:0.95rem;">
+                    {{ item.obj.category }}
+                    {% if item.is_over_budget %}
+                      <span class="badge bg-danger py-1" style="font-size:0.6rem;">Over Limit</span>
+                    {% endif %}
+                  </div>
                   <small class="text-muted">Monthly Budget</small>
                 </div>
               </div>
@@ -188,8 +193,10 @@
             </div>
 
             <!-- % Used -->
-            <div class="col-4 col-md-1 text-md-end">
-              {% if item.status == 'danger' %}
+            <div class="col-4 col-md-2 text-md-end">
+              {% if item.is_over_budget %}
+                <span class="badge-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ item.over_percentage }}% over</span>
+              {% elif item.status == 'danger' %}
                 <span class="badge-danger"><i class="bi bi-exclamation me-1"></i>{{ item.usage_pct_display }}%</span>
               {% elif item.status == 'warning' %}
                 <span class="badge-warning"><i class="bi bi-dash me-1"></i>{{ item.usage_pct_display }}%</span>
@@ -199,9 +206,9 @@
             </div>
 
             <!-- Progress Bar -->
-            <div class="col-8 col-md-3">
+            <div class="col-8 col-md-2">
               <div class="progress">
-                <div class="progress-bar {{ item.status }}" style="width: {{ item.usage_pct }}%;"
+                <div class="progress-bar {% if item.is_over_budget %}bg-danger{% else %}{{ item.status }}{% endif %}" style="width: {{ item.usage_pct }}%;"
                   role="progressbar" aria-valuenow="{{ item.usage_pct }}"
                   aria-valuemin="0" aria-valuemax="100">
                 </div>

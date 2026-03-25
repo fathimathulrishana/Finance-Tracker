@@ -74,7 +74,7 @@ def analyze(user, budgets, today=None):
                 'title': f'Over Budget: {cat}',
                 'message': (
                     f'You have exceeded your {cat} budget by '
-                    f'₹{float(spent - limit):.0f} ({pct:.0f}% used). '
+                    f'₹{float(spent - limit):.0f} ({pct - 100:.0f}% over). '
                     f'Consider cutting back immediately.'
                 ),
                 'icon': 'bi-exclamation-triangle-fill',

@@ -36,4 +36,9 @@ urlpatterns = [
 
     # AI Budget Optimizer
     path('ai/budget-analysis/', views.ai_budget_analysis, name='ai_budget_analysis'),
+
+    # Profile & Settings
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/password/', views.change_password, name='change_password'),
 ]

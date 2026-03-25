@@ -24,8 +24,14 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-from .forms import ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm, SavingGoalForm, DepositForm, BillForm, BudgetForm
-from .models import Expense, Income, SavingGoal, Bill, Budget
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from .forms import (
+    ExpenseForm, MonthFilterForm, RegisterForm, IncomeForm, 
+    SavingGoalForm, DepositForm, BillForm, BudgetForm,
+    UserUpdateForm, ProfileUpdateForm
+)
+from .models import Expense, Income, SavingGoal, Bill, Budget, Profile
 from .utils.smart_features import categorize_expense, detect_anomaly as rule_based_anomaly, generate_suggestions
 from expenses.ml.predictors.lstm_predictor import predict_next_month
 from expenses.ml.predictors.category_predictor import predict_category
@@ -154,6 +160,18 @@ def dashboard(request):
 	
 	start_date, end_date, current_month_label = get_date_range(range_type, start_str, end_str)
 
+	from datetime import datetime
+	if range_type == "current" or not range_type:
+		period_label = datetime.now().strftime("%B %Y")
+	elif range_type == "previous":
+		previous_month = datetime.now().month - 1 or 12
+		year = datetime.now().year if datetime.now().month > 1 else datetime.now().year - 1
+		period_label = datetime(year, previous_month, 1).strftime("%B %Y")
+	elif start_date and end_date:
+		period_label = f"{start_date.strftime('%b %Y')} – {end_date.strftime('%b %Y')}"
+	else:
+		period_label = "All Time"
+
 	# Execute strict constraints globally manually syncing logic for robust insights.
 	month_expenses = user_expenses.filter(date__gte=start_date, date__lte=end_date)
 	monthly_expenses = month_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
@@ -172,10 +190,9 @@ def dashboard(request):
 	total_expense_all = Expense.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or 0
 	lifetime_savings = total_income_all - total_expense_all
 	
-	# C) Global Data (for Available Balance - Card 1)
+	# C) Global Data (for Available Balance calculations previously)
 	total_saved_goals = SavingGoal.objects.filter(user=request.user).aggregate(total=Sum('saved_amount'))['total'] or Decimal('0.00')
 	net_worth = lifetime_savings
-	available_balance = net_worth - total_saved_goals
 
 	# MONTH-TO-MONTH COMPARISON
 	duration = (end_date - start_date).days + 1
@@ -217,18 +234,26 @@ def dashboard(request):
 	savings_trend = get_percent_dict(lifetime_savings, prev_savings)
 
 	if monthly_income > 0:
-		savings_rate = (lifetime_savings / monthly_income) * 100
+		monthly_savings = monthly_income - monthly_expenses
+		raw_score = (float(monthly_savings) / float(monthly_income)) * 100
 	else:
-		savings_rate = 0
+		raw_score = 0.0
 
-	if savings_rate >= 70:
-		health_score = "Excellent"
+	health_score_val = max(min(raw_score, 100.0), 0.0)
+	health_score_display = round(health_score_val, 1)
+	
+	# Clean integer formatting if no decimals needed
+	if float(health_score_display).is_integer():
+		health_score_display = int(health_score_display)
+
+	if health_score_val >= 70:
+		health_status = "Good"
 		health_color = "success"
-	elif savings_rate >= 40:
-		health_score = "Good"
+	elif health_score_val >= 40:
+		health_status = "Average"
 		health_color = "warning"
 	else:
-		health_score = "Poor"
+		health_status = "Poor"
 		health_color = "danger"
 
 	# Execute Comparison evaluation safely
@@ -303,14 +328,14 @@ def dashboard(request):
 		'monthly_income': monthly_income,
 		'monthly_expenses': monthly_expenses,
 		'total_balance': total_balance,
-		'available_balance': available_balance,
+		'period_label': period_label,
 		'lifetime_savings': lifetime_savings,
 		'balance_trend': balance_trend,
 		'income_trend': income_trend,
 		'expense_trend': expense_trend,
 		'savings_trend': savings_trend,
-		'savings_rate': round(savings_rate, 1),
-		'health_score': health_score,
+		'health_score': health_score_display,
+		'health_status': health_status,
 		'health_color': health_color,
 		'current_month': current_month,
 		'category_labels': category_labels,
@@ -973,9 +998,16 @@ def _enrich_budgets(budgets, user, today):
 		).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
 		if b.monthly_budget > 0:
-			usage_pct = round(float(spent / b.monthly_budget) * 100, 1)
+			usage_pct = float(spent / b.monthly_budget) * 100
 		else:
 			usage_pct = 0.0
+
+		if usage_pct > 100:
+			over_percentage = usage_pct - 100
+			is_over_budget = True
+		else:
+			over_percentage = 0
+			is_over_budget = False
 
 		if usage_pct >= 80:
 			status = 'danger'
@@ -983,12 +1015,18 @@ def _enrich_budgets(budgets, user, today):
 			status = 'warning'
 		else:
 			status = 'safe'
+			
+		# Clean formatting (15.0 -> 15, 15.3 -> 15.3). Capped at 100 display
+		capped_usage = min(usage_pct, 100)
+		usage_pct_display = int(capped_usage) if capped_usage.is_integer() else round(capped_usage, 1)
 
 		enriched.append({
 			'obj': b,
 			'spent': spent,
 			'usage_pct': min(usage_pct, 100),  # cap bar at 100
-			'usage_pct_display': usage_pct,  # show real value even if over 100
+			'usage_pct_display': usage_pct_display,
+			'is_over_budget': is_over_budget,
+			'over_percentage': int(over_percentage) if float(over_percentage).is_integer() else round(over_percentage, 1),
 			'status': status,
 			'icon': _CATEGORY_ICONS.get(b.category, 'bi-grid'),
 			'color': _CATEGORY_COLORS.get(b.category, '#64748b'),
@@ -1135,3 +1173,55 @@ def ai_budget_analysis(request):
 					'categories_analyzed': 0, 'total_spent': 0, 'total_budgeted': 0},
 			}
 		}, status=200)  # Always 200 — never crash the UI
+@login_required
+def profile_view(request):
+    """Display the user's profile information."""
+    profile = get_object_or_404(Profile, user=request.user)
+    return render(request, 'profile.html', {
+        'user': request.user,
+        'profile': profile
+    })
+
+@login_required
+def edit_profile(request):
+    """Handle user and profile information updates."""
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, f'Your account has been updated!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+
+    return render(request, 'profile.html', {
+        'u_form': u_form,
+        'p_form': p_form,
+        'edit_mode': True,
+        'profile': request.user.profile
+    })
+
+@login_required
+def change_password(request):
+    """Securely handle user password updates."""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important for keeping user logged in
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    return render(request, 'profile.html', {
+        'password_form': form,
+        'password_mode': True,
+        'profile': request.user.profile
+    })

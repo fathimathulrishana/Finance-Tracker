@@ -274,3 +274,40 @@ class BudgetForm(forms.ModelForm):
         if amount <= 0:
             raise forms.ValidationError('Budget must be greater than zero.')
         return amount
+
+
+class UserUpdateForm(forms.ModelForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({
+                'class': 'form-control',
+                'style': 'min-height: 42px; padding: 0.6rem 0.75rem;'
+            })
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    from .models import Profile
+    CURRENCY_CHOICES = [
+        ('INR', 'Indian Rupee (₹)'),
+        ('USD', 'US Dollar ($)'),
+        ('EUR', 'Euro (€)'),
+        ('GBP', 'British Pound (£)'),
+    ]
+    currency = forms.ChoiceField(choices=CURRENCY_CHOICES)
+
+    class Meta:
+        from .models import Profile
+        model = Profile
+        fields = ['profile_image', 'currency']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['profile_image'].widget.attrs.update({'class': 'form-control'})
+        self.fields['currency'].widget.attrs.update({'class': 'form-select'})

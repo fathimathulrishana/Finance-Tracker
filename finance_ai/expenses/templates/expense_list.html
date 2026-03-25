@@ -36,7 +36,6 @@
       <div class="stat-info">
         <span class="stat-label">Total Expense</span>
         <span class="stat-value">₹{{ total_expense|default:"0"|intcomma }}</span>
-        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
       </div>
     </div>
 
@@ -45,7 +44,6 @@
       <div class="stat-info">
         <span class="stat-label">{{ month_label|default:"This Month Expense" }}</span>
         <span class="stat-value">₹{{ this_month_expense|default:"0"|intcomma }}</span>
-        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
       </div>
     </div>
 
@@ -54,7 +52,6 @@
       <div class="stat-info">
         <span class="stat-label">Category Count</span>
         <span class="stat-value">{{ unique_category_count|default:"0" }}</span>
-        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
       </div>
     </div>
 
@@ -67,7 +64,6 @@
         {% else %}
         <span class="stat-value d-block" style="font-size: 1.2rem;">-</span>
         {% endif %}
-        <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem; line-height: 1.2;">Updated based on current filter</small>
       </div>
     </div>
 

@@ -96,7 +96,7 @@ class SavingGoal(models.Model):
     @property
     def progress(self):
         if self.target_amount > 0:
-            return round((self.saved_amount / self.target_amount) * 100, 1)
+            return min(round((self.saved_amount / self.target_amount) * 100, 1), 100)
         return 0.0
 
 

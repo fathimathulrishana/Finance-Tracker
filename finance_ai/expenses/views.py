@@ -14,7 +14,7 @@ def _invalidate_ai_cache(user) -> None:
     """Immediately clear the AI budget analysis cache for this user."""
     cache.delete(f'ai_budget_{user.pk}')
 from django.contrib.auth.views import LoginView
-from django.db.models import Sum
+from django.db.models import Sum, F
 from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse, HttpResponseForbidden
@@ -36,7 +36,7 @@ from .utils.smart_features import categorize_expense, detect_anomaly as rule_bas
 from expenses.ml.predictors.lstm_predictor import predict_next_month
 from expenses.ml.predictors.category_predictor import predict_category
 from expenses.ml.predictors.anomaly_predictor import detect_anomaly as ml_anomaly
-from expenses.services.insight_engine import generate_insights
+from expenses.services.insight_engine import generate_insights, generate_financial_summary
 
 
 def get_date_range(range_type, start_str=None, end_str=None):
@@ -308,6 +308,7 @@ def dashboard(request):
 	# Phase 5: Saving Goals and AI Insights
 	saving_goals = SavingGoal.objects.filter(user=request.user)
 	insights = generate_insights(request.user, start_date=start_date, end_date=end_date)
+	financial_summary = generate_financial_summary(request.user, start_date=start_date, end_date=end_date)
 
 	# Upcoming Bills: overdue + due within 30 days, max 5 for dashboard widget
 	upcoming_bills = Bill.objects.filter(
@@ -356,6 +357,7 @@ def dashboard(request):
 		'comparison_icon_inc': comp_icon_inc,
 		'saving_goals': saving_goals,
 		'insights': insights,
+		'financial_summary': financial_summary,
 		'upcoming_bills': upcoming_bills,
 		'today': today,
 		'budget_alerts': budget_alerts,
@@ -788,23 +790,35 @@ def deposit_saving_goal(request, pk: int):
 		return redirect('admin_dashboard')
 		
 	goal = get_object_or_404(SavingGoal, pk=pk, user=request.user)
+	remaining_amount = max(goal.target_amount - goal.saved_amount, Decimal('0.00'))
+	is_goal_completed = remaining_amount <= 0
 	
 	# Calculate user's available savings
 	user_expenses = Expense.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 	user_incomes = Income.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-	available_savings = user_incomes - user_expenses
+	available_savings = max(user_incomes - user_expenses, Decimal('0.00'))
 	
 	if request.method == 'POST':
-		form = DepositForm(request.POST)
+		if is_goal_completed:
+			messages.error(request, 'Goal already completed.')
+			return redirect('goals_dashboard')
+
+		form = DepositForm(request.POST, goal=goal)
 		if form.is_valid():
 			deposit_amount = Decimal(str(form.cleaned_data['amount']))
+
+			# Recalculate using latest DB value before writing.
+			goal.refresh_from_db(fields=['saved_amount', 'target_amount'])
+			remaining_amount = max(goal.target_amount - goal.saved_amount, Decimal('0.00'))
 			
-			if deposit_amount > available_savings:
+			if deposit_amount > remaining_amount:
+				messages.error(request, 'Deposit exceeds remaining goal amount')
+			elif deposit_amount > available_savings:
 				messages.error(request, f'Insufficient savings! You only have ₹{available_savings:.2f} available to deposit.')
 			else:
 				# 1. Add amount to saving goal
 				goal.saved_amount += deposit_amount
-				goal.save()
+				goal.save(update_fields=['saved_amount'])
 				
 				# 2. Prevent double counting: Deduct from total balance by creating an Expense 
 				Expense.objects.create(
@@ -819,12 +833,14 @@ def deposit_saving_goal(request, pk: int):
 		else:
 			messages.error(request, 'Please correct the errors below.')
 	else:
-		form = DepositForm()
+		form = DepositForm(goal=goal)
 		
 	return render(request, 'deposit_saving_goal.html', {
 		'form': form,
 		'goal': goal,
-		'available_savings': available_savings
+		'available_savings': available_savings,
+		'remaining_amount': remaining_amount,
+		'is_goal_completed': is_goal_completed,
 	})
 
 @login_required
@@ -834,28 +850,123 @@ def goals_dashboard(request):
 	if request.user.is_staff or request.user.is_superuser:
 		return redirect('admin_dashboard')
 
-	saving_goals = SavingGoal.objects.filter(user=request.user)
+	goals = SavingGoal.objects.filter(user=request.user)
+	active_goals = list(goals.filter(saved_amount__lt=F('target_amount')))
+	completed_goals_qs = goals.filter(saved_amount__gte=F('target_amount'))
+	completed_goals = list(completed_goals_qs)
+	selected_status = request.GET.get('status', 'active')
+	if selected_status not in ('active', 'completed'):
+		selected_status = 'active'
+
+	today = date.today()
+	thirty_days_ago = today - timedelta(days=29)
+	transfer_prefix = "Transferred to Saving Goal: "
+
+	recent_deposits = (
+		Expense.objects.filter(
+			user=request.user,
+			category='Others',
+			date__gte=thirty_days_ago,
+			description__startswith=transfer_prefix,
+		)
+		.values('description')
+		.annotate(total=Sum('amount'))
+	)
+
+	deposits_30d_by_goal = {}
+	for row in recent_deposits:
+		description = row.get('description') or ''
+		goal_title = description.replace(transfer_prefix, '', 1)
+		deposits_30d_by_goal[goal_title] = deposits_30d_by_goal.get(goal_title, Decimal('0.00')) + (row.get('total') or Decimal('0.00'))
+
+	for goal in active_goals + completed_goals:
+		goal.days_left = None
+		goal.status = 'normal'
+		goal.deadline_note = ''
+		goal.is_at_risk = False
+		goal.completion_date = None
+		goal.feasibility_status = 'on_track'
+		goal.required_daily_saving = 0.0
+		goal.avg_daily_saving = 0.0
+
+		if goal.deadline:
+			days_left = (goal.deadline - today).days
+			goal.days_left = days_left
+
+			if days_left < 0:
+				goal.status = 'overdue'
+				goal.deadline_note = 'Deadline passed'
+			elif days_left <= 5:
+				goal.status = 'urgent'
+				goal.deadline_note = f'Deadline in {days_left} days'
+			elif days_left <= 15:
+				goal.status = 'warning'
+				goal.deadline_note = f'Deadline in {days_left} days'
+			else:
+				goal.status = 'normal'
+				goal.deadline_note = f'Deadline in {days_left} days'
+
+			if goal.progress < 50 and days_left < 5:
+				goal.is_at_risk = True
+
+		remaining_amount = max(goal.target_amount - goal.saved_amount, Decimal('0.00'))
+		total_saved_last_30_days = deposits_30d_by_goal.get(goal.title, Decimal('0.00'))
+		avg_daily_saving = total_saved_last_30_days / Decimal('30')
+
+		goal.avg_daily_saving = float(avg_daily_saving)
+
+		if remaining_amount <= 0:
+			goal.feasibility_status = 'completed'
+			goal.required_daily_saving = 0.0
+		elif goal.days_left is not None and goal.days_left <= 0:
+			goal.feasibility_status = 'deadline_passed'
+			goal.required_daily_saving = 0.0
+		elif goal.days_left is None:
+			goal.feasibility_status = 'on_track'
+			goal.required_daily_saving = 0.0
+		else:
+			required_daily_saving = remaining_amount / Decimal(max(goal.days_left, 1))
+			goal.required_daily_saving = float(required_daily_saving)
+			if required_daily_saving > avg_daily_saving:
+				goal.feasibility_status = 'behind'
+			else:
+				goal.feasibility_status = 'on_track'
+
+	for goal in completed_goals:
+		last_deposit = Expense.objects.filter(
+			user=request.user,
+			category='Others',
+			description=f"Transferred to Saving Goal: {goal.title}"
+		).order_by('-date').first()
+		goal.completion_date = last_deposit.date if last_deposit else today
+
+	display_goals = active_goals if selected_status == 'active' else completed_goals
 
 	# Summary stats
-	total_goals = saving_goals.count()
-	completed_goals = sum(1 for g in saving_goals if g.progress >= 100)
-	in_progress_goals = total_goals - completed_goals
+	total_goals = goals.count()
+	completed_goals_count = completed_goals_qs.count()
+	in_progress_goals = len(active_goals)
+	success_rate = round((completed_goals_count / total_goals) * 100, 1) if total_goals else 0.0
 
-	total_saved   = saving_goals.aggregate(s=Sum('saved_amount'))['s'] or Decimal('0.00')
-	total_target  = saving_goals.aggregate(s=Sum('target_amount'))['s'] or Decimal('0.00')
-	overall_pct   = round((total_saved / total_target) * 100, 1) if total_target > 0 else 0.0
+	total_saved   = goals.aggregate(s=Sum('saved_amount'))['s'] or Decimal('0.00')
+	total_target  = goals.aggregate(s=Sum('target_amount'))['s'] or Decimal('0.00')
+	overall_pct   = min(round((total_saved / total_target) * 100, 1), 100) if total_target > 0 else 0.0
 
 	# Available savings (all-time income - all-time expenses - already deposited)
 	all_income   = Income.objects.filter(user=request.user).aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
 	all_expenses = Expense.objects.filter(user=request.user).aggregate(s=Sum('amount'))['s'] or Decimal('0.00')
-	goal_allocated = saving_goals.aggregate(s=Sum('saved_amount'))['s'] or Decimal('0.00')
+	goal_allocated = goals.aggregate(s=Sum('saved_amount'))['s'] or Decimal('0.00')
 	available_savings = max(all_income - all_expenses - goal_allocated, Decimal('0.00'))
 
 	context = {
-		'saving_goals': saving_goals,
+		'saving_goals': display_goals,
+		'selected_status': selected_status,
+		'active_goals_count': len(active_goals),
+		'completed_goals_qs_count': completed_goals_count,
 		'total_goals': total_goals,
-		'completed_goals': completed_goals,
+		'completed_goals': completed_goals_count,
 		'in_progress_goals': in_progress_goals,
+		'success_rate': success_rate,
 		'total_saved': total_saved,
 		'total_target': total_target,
 		'overall_pct': overall_pct,

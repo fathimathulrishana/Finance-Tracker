@@ -333,6 +333,9 @@
                         <i class="bi bi-piggy-bank-fill text-success"></i>
                         Available Savings: ₹{{ available_savings|default:0|floatformat:2|intcomma }}
                     </div>
+                    <div class="text-muted small mt-2">
+                        Remaining: ₹{{ remaining_amount|default:0|floatformat:2|intcomma }}
+                    </div>
                 </div>
 
                 <form method="post" novalidate>
@@ -350,7 +353,18 @@
                         <p class="section-label">Enter Deposit Amount</p>
                         <div class="input-group input-group-lg amount-input-group mx-auto" style="max-width: 380px;">
                             <span class="input-group-text">₹</span>
-                            {{ form.amount }}
+                            <input
+                                type="number"
+                                name="amount"
+                                id="id_amount"
+                                class="form-control form-control-lg"
+                                step="0.01"
+                                min="0.01"
+                                max="{{ remaining_amount|floatformat:2 }}"
+                                placeholder="e.g. 500"
+                                value="{{ form.amount.value|default_if_none:'' }}"
+                                {% if is_goal_completed %}disabled{% else %}required{% endif %}
+                            >
                         </div>
                         <p class="text-muted small mt-2 mb-0">How much would you like to add to this goal?</p>
                         {% if form.amount.errors %}
@@ -363,9 +377,15 @@
 
                     <!-- Submit Button -->
                     <div class="d-grid mt-4">
+                        {% if is_goal_completed %}
+                        <button type="button" class="btn btn-deposit" disabled>
+                            <i class="bi bi-check-circle-fill me-2"></i> Goal Completed
+                        </button>
+                        {% else %}
                         <button type="submit" class="btn btn-deposit">
                             <i class="bi bi-wallet2 me-2"></i> Confirm Deposit
                         </button>
+                        {% endif %}
                     </div>
                 </form>
 

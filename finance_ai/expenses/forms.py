@@ -1,5 +1,6 @@
 from django import forms
 from datetime import date as dt_date
+from decimal import Decimal
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Expense
@@ -79,7 +80,11 @@ class ExpenseForm(forms.ModelForm):
 class MonthFilterForm(forms.Form):
     month = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={"type": "month", "class": "form-control"}),
+        input_formats=["%Y-%m"],
+        widget=forms.DateInput(
+            format="%Y-%m",
+            attrs={"type": "month", "class": "form-control"}
+        ),
         help_text="Filter by month",
     )
 
@@ -206,6 +211,26 @@ class DepositForm(forms.Form):
         }),
         label=""
     )
+
+    def __init__(self, *args, **kwargs):
+        self.goal = kwargs.pop('goal', None)
+        super().__init__(*args, **kwargs)
+
+        if self.goal is not None:
+            remaining_amount = max(self.goal.target_amount - self.goal.saved_amount, Decimal('0.00'))
+            self.fields['amount'].widget.attrs['max'] = f"{remaining_amount:.2f}"
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is None:
+            raise ValidationError("Amount is required.")
+
+        if self.goal is not None:
+            remaining_amount = self.goal.target_amount - self.goal.saved_amount
+            if amount > remaining_amount:
+                raise ValidationError("Amount exceeds remaining goal")
+
+        return amount
 
 
 class BillForm(forms.ModelForm):

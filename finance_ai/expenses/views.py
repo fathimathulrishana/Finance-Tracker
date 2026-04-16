@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.cache import never_cache
 from django.core.cache import cache
 
 
@@ -105,6 +106,43 @@ def is_regular_user(user):
 	return not (user.is_staff or user.is_superuser)
 
 
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
+
+class CustomAuthenticationForm(AuthenticationForm):
+	error_messages = {
+		'invalid_login': "Invalid username or password",
+		'inactive': "Your account has been deactivated by admin. Please contact support.",
+	}
+
+	def clean(self):
+		username = self.cleaned_data.get('username')
+		password = self.cleaned_data.get('password')
+
+		if username is not None and password:
+			from django.contrib.auth.models import User
+			user = User.objects.filter(username=username).first()
+
+			if user:
+				is_password_valid = user.check_password(password)
+				if is_password_valid:
+					if not user.is_active:
+						raise ValidationError(self.error_messages['inactive'], code='inactive')
+					else:
+						# Proceed with normal django authenticate for active users
+						self.user_cache = authenticate(self.request, username=username, password=password)
+						if self.user_cache is None:
+							raise self.get_invalid_login_error()
+				else:
+					raise self.get_invalid_login_error()
+			else:
+				# Dummy password check to prevent timing attacks (user enumeration)
+				User().set_password(password)
+				raise self.get_invalid_login_error()
+
+		return self.cleaned_data
+
+
 class CustomLoginView(LoginView):
 	"""
 	Custom login view that redirects based on user role.
@@ -113,6 +151,8 @@ class CustomLoginView(LoginView):
 	- Regular users → / (dashboard)
 	"""
 	template_name = 'login.html'
+	form_class = CustomAuthenticationForm
+	redirect_authenticated_user = True
 	
 	def get_success_url(self):
 		"""
@@ -142,6 +182,7 @@ def register(request):
 
 
 @login_required
+@never_cache
 @user_passes_test(is_regular_user, redirect_field_name=None)
 def dashboard(request):
 	"""User dashboard - restricted to regular users only."""
@@ -1285,6 +1326,7 @@ def ai_budget_analysis(request):
 			}
 		}, status=200)  # Always 200 — never crash the UI
 @login_required
+@never_cache
 def profile_view(request):
     """Display the user's profile information."""
     profile = get_object_or_404(Profile, user=request.user)
@@ -1294,6 +1336,7 @@ def profile_view(request):
     })
 
 @login_required
+@never_cache
 def edit_profile(request):
     """Handle user and profile information updates."""
     if request.method == 'POST':
@@ -1317,6 +1360,7 @@ def edit_profile(request):
     })
 
 @login_required
+@never_cache
 def change_password(request):
     """Securely handle user password updates."""
     if request.method == 'POST':

@@ -8,6 +8,7 @@ Admin views for Phase-1
 from datetime import datetime, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test
+from django.views.decorators.cache import never_cache
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Sum, Count
@@ -32,6 +33,7 @@ def is_admin(user):
     return user.is_staff and user.is_superuser
 
 
+@never_cache
 @user_passes_test(is_admin, redirect_field_name=None)
 def admin_dashboard(request):
     """Admin dashboard with system-wide analytics (PHASE-1)."""
@@ -107,6 +109,7 @@ def admin_dashboard(request):
     return render(request, 'admin/admin_dashboard.html', context)
 
 
+@never_cache
 @user_passes_test(is_admin, redirect_field_name=None)
 def manage_users(request):
     """Manage all users - view, activate, deactivate, delete."""
@@ -141,6 +144,7 @@ def manage_users(request):
 
 
 
+@never_cache
 @user_passes_test(is_admin, redirect_field_name=None)
 def reports(request):
     """

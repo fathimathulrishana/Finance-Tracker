@@ -14,9 +14,12 @@
         </div>
 
         {% if form.non_field_errors %}
-          <div class="alert alert-danger" role="alert">
-            {{ form.non_field_errors.0 }}
-          </div>
+          {% for error in form.non_field_errors %}
+            <div class="alert {% if 'deactivated' in error|lower %}alert-warning{% else %}alert-danger{% endif %} d-flex align-items-center shadow-sm" role="alert">
+              <i class="bi {% if 'deactivated' in error|lower %}bi-exclamation-triangle-fill text-warning{% else %}bi-x-circle-fill text-danger{% endif %} fs-4 me-2"></i>
+              <div>{{ error }}</div>
+            </div>
+          {% endfor %}
         {% endif %}
 
         <form method="post" novalidate>

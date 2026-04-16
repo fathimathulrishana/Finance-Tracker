@@ -5,114 +5,208 @@
 {% block title %}Profile & Settings | Finance AI{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row g-4">
+    <!-- Left Sidebar -->
     <div class="col-lg-4">
-        <!-- Profile Card -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body text-center py-5">
-                <div class="mb-4">
+        
+        <!-- Profile Main Card -->
+        <div class="card shadow-sm mb-4 border-0 rounded-4 overflow-hidden position-relative">
+            <!-- Decorative Glow -->
+            <div class="position-absolute top-0 start-50 translate-middle rounded-circle bg-primary" style="width: 250px; height: 250px; filter: blur(60px); opacity: 0.15; z-index: 0;"></div>
+            
+            <div class="card-body text-center py-5 position-relative z-1">
+                <div class="mb-4 position-relative d-inline-block">
                     {% if profile.profile_image %} 
                         <img src="{{ profile.profile_image.url }}" 
-                             class="rounded-circle"
-                             width="100"
-                             height="100"
-                             style="object-fit: cover;">
+                             class="rounded-circle shadow-sm border border-4 border-white user-select-none"
+                             width="120"
+                             height="120"
+                             style="object-fit: cover; transition: transform 0.3s ease;"
+                             onmouseover="this.style.transform='scale(1.05)'"
+                             onmouseout="this.style.transform='scale(1)'">
                     {% else %} 
-                        <div class="avatar-circle">
+                        <div class="shadow-sm border border-4 border-white d-flex align-items-center justify-content-center text-white user-select-none" 
+                             style="width: 120px; height: 120px; border-radius: 50%; font-size: 3rem; font-weight: 600; background: linear-gradient(135deg, var(--bs-primary), #0a58ca); margin: 0 auto; transition: transform 0.3s ease;"
+                             onmouseover="this.style.transform='scale(1.05)'"
+                             onmouseout="this.style.transform='scale(1)'">
                             {{ request.user.first_name|first|upper }} 
                         </div>
                     {% endif %}
                 </div>
-                <h3 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h3>
-                <p class="text-muted mb-3">{{ user.email }}</p>
-                <div class="badge bg-light text-primary px-3 py-2 rounded-pill mb-4 border border-primary border-opacity-25">
-                    <i class="bi bi-person-check-fill me-1"></i> Member since {{ user.date_joined|date:"M Y" }}
-                </div>
                 
-                <div class="list-group list-group-flush text-start border-top pt-3">
-                    <a href="{% url 'profile' %}" class="list-group-item list-group-item-action border-0 {% if not edit_mode and not password_mode %}active rounded{% endif %}">
-                        <i class="bi bi-grid-1x2 me-2"></i> Overview
+                <h4 class="fw-bold mb-1 tracking-tight text-dark">{{ user.get_full_name|default:user.username }}</h4>
+                <p class="text-muted mb-3 small">{{ user.email }}</p>
+                
+
+                
+                <!-- Navigation Menu inside Card for neatness -->
+                <div class="list-group list-group-flush text-start border-0 pt-2 px-1 rounded-3">
+                    <a href="{% url 'profile' %}" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 px-4 py-3 fw-medium transition-all {% if not edit_mode and not password_mode %}active shadow-sm text-white bg-primary{% else %}text-muted{% endif %}">
+                        <i class="bi bi-grid-1x2 me-3 {% if not edit_mode and not password_mode %}text-white{% else %}text-primary{% endif %}"></i> Overview
                     </a>
-                    <a href="{% url 'edit_profile' %}" class="list-group-item list-group-item-action border-0 {% if edit_mode %}active rounded{% endif %}">
-                        <i class="bi bi-pencil-square me-2"></i> Edit Profile
+                    <a href="{% url 'edit_profile' %}" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 px-4 py-3 fw-medium transition-all {% if edit_mode %}active shadow-sm text-white bg-primary{% else %}text-muted{% endif %}">
+                        <i class="bi bi-pencil-square me-3 {% if edit_mode %}text-white{% else %}text-primary{% endif %}"></i> Edit Profile
                     </a>
-                    <a href="{% url 'change_password' %}" class="list-group-item list-group-item-action border-0 {% if password_mode %}active rounded{% endif %}">
-                        <i class="bi bi-shield-lock me-2"></i> Security
+                    <a href="{% url 'change_password' %}" class="list-group-item list-group-item-action border-0 rounded-3 px-4 py-3 fw-medium transition-all {% if password_mode %}active shadow-sm text-white bg-primary{% else %}text-muted{% endif %}">
+                        <i class="bi bi-shield-lock me-3 {% if password_mode %}text-white{% else %}text-primary{% endif %}"></i> Security
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Account Activity -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bi bi-activity me-2"></i>Account Stats</h6>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted small">Preferred Currency</span>
-                    <span class="badge bg-info-subtle text-info">{{ profile.currency }}</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span class="text-muted small">Last Login</span>
-                    <span class="small">{{ user.last_login|naturaltime }}</span>
+        <!-- Account Activity (Minimal) -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 mb-lg-0">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 text-dark d-flex align-items-center">
+                    <i class="bi bi-activity text-primary me-2"></i>Account Stats
+                </h6>
+                <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-3 border border-light">
+                    <span class="text-muted small fw-medium">Last Login</span>
+                    <span class="small fw-bold text-dark">{{ user.last_login|naturaltime }}</span>
                 </div>
             </div>
         </div>
+        
     </div>
 
+    <!-- Right Side Content -->
     <div class="col-lg-8">
-        {% if edit_mode %}
-            <!-- Edit Profile Section -->
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3 border-bottom border-light">
-                    <h5 class="card-title fw-bold mb-0">Update Personal Information</h5>
+        {% if not edit_mode and not password_mode %}
+            <!-- OVERVIEW MODE -->
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-white py-4 px-4 px-sm-5 border-bottom border-light d-flex justify-content-between align-items-center rounded-top-4">
+                    <h5 class="card-title fw-bold mb-0 text-dark">Profile Overview</h5>
+                    <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-medium shadow-sm d-flex align-items-center transition-all btn-edit-hover">
+                        <i class="bi bi-pencil me-2"></i> Edit
+                    </a>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-4 px-sm-5 py-sm-5">
+                    
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6">
+                            <div class="stat-card p-4 rounded-4 position-relative overflow-hidden h-100 bg-white shadow-sm border border-light">
+                                <div class="position-relative z-1">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-person fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <label class="text-muted small fw-bold mb-0" style="letter-spacing: 0.8px;">USERNAME</label>
+                                            <h6 class="fw-bold mb-0 text-dark mt-1">{{ user.username }}</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="position-absolute opacity-10" style="right: -10px; bottom: -15px; transform: rotate(-10deg);">
+                                    <i class="bi bi-person text-primary" style="font-size: 5.5rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card p-4 rounded-4 position-relative overflow-hidden h-100 bg-white shadow-sm border border-light">
+                                <div class="position-relative z-1">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-shield-check fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <label class="text-muted small fw-bold mb-0" style="letter-spacing: 0.8px;">EMAIL STATUS</label>
+                                            <h6 class="fw-bold mb-0 text-dark mt-1"><i class="bi bi-check-circle-fill text-success me-1"></i> Verified</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="position-absolute opacity-10" style="right: -10px; bottom: -15px; transform: rotate(-10deg);">
+                                    <i class="bi bi-shield-check text-success" style="font-size: 5.5rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mb-4 text-dark d-flex align-items-center"><i class="bi bi-card-text text-primary me-2"></i>Personal Details</h6>
+                    <div class="bg-light rounded-4 p-4 p-sm-5 ms-0 border border-light shadow-sm">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-sm-4 text-muted fw-medium mb-1 mb-sm-0">First Name</div>
+                            <div class="col-sm-8 fw-bold text-dark fs-6">{{ user.first_name|default:"Not set" }}</div>
+                        </div>
+                        <hr class="border-secondary opacity-10 my-3">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-sm-4 text-muted fw-medium mb-1 mb-sm-0">Last Name</div>
+                            <div class="col-sm-8 fw-bold text-dark fs-6">{{ user.last_name|default:"Not set" }}</div>
+                        </div>
+                        <hr class="border-secondary opacity-10 my-3">
+                        <div class="row align-items-center">
+                            <div class="col-sm-4 text-muted fw-medium mb-1 mb-sm-0">Primary Email</div>
+                            <div class="col-sm-8 fw-bold text-dark fs-6">{{ user.email }}</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        {% elif edit_mode %}
+            <!-- EDIT MODE -->
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-white py-4 px-4 px-sm-5 border-bottom border-light rounded-top-4">
+                    <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center">
+                        <span class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                            <i class="bi bi-pencil-square" style="font-size: 1rem;"></i>
+                        </span>
+                        Update Personal Information
+                    </h5>
+                </div>
+                <div class="card-body p-4 px-sm-5 py-sm-5">
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label small fw-bold text-muted">FIRST NAME</label>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted" style="letter-spacing: 0.5px;">FIRST NAME</label>
                                 {{ u_form.first_name }}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label small fw-bold text-muted">LAST NAME</label>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted" style="letter-spacing: 0.5px;">LAST NAME</label>
                                 {{ u_form.last_name }}
                             </div>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">EMAIL ADDRESS</label>
+                            <label class="form-label small fw-bold text-muted" style="letter-spacing: 0.5px;">EMAIL ADDRESS</label>
                             {{ u_form.email }}
                         </div>
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label small fw-bold text-muted">PROFILE PICTURE</label>
-                                {{ p_form.profile_image }}
-                                <small class="text-muted d-block mt-1">Upload JPEG or PNG files.</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label small fw-bold text-muted">DEFAULT CURRENCY</label>
-                                {{ p_form.currency }}
-                            </div>
+                        <div class="mb-5 p-4 bg-light rounded-4 border border-light">
+                            <label class="form-label small fw-bold text-muted mb-3" style="letter-spacing: 0.5px;">PROFILE PICTURE</label>
+                            {{ p_form.profile_image }}
+                            <small class="text-muted d-block mt-3"><i class="bi bi-info-circle me-1"></i>Upload JPEG or PNG files. Recommended aspect ratio 1:1.</small>
                         </div>
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <a href="{% url 'profile' %}" class="btn btn-light px-4">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                        
+                        <hr class="border-light mb-4">
+                        <div class="d-flex flex-column flex-sm-row justify-content-end gap-3 mt-4">
+                            <a href="{% url 'profile' %}" class="btn btn-light px-5 py-2 rounded-pill fw-medium">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill fw-medium shadow-sm transition-all btn-submit-hover">Save Changes</button>
                         </div>
                     </form>
                 </div>
             </div>
 
         {% elif password_mode %}
-            <!-- Password Security Section -->
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3 border-bottom border-light">
-                    <h5 class="card-title fw-bold mb-0">Security Settings</h5>
+            <!-- SECURITY MODE -->
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-white py-4 px-4 px-sm-5 border-bottom border-light rounded-top-4">
+                    <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center">
+                        <span class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                            <i class="bi bi-shield-lock" style="font-size: 1rem;"></i>
+                        </span>
+                        Security Settings
+                    </h5>
                 </div>
-                <div class="card-body p-4">
-                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4">
-                        <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-                        <div>
-                            Changing your password will log you out from other devices. Ensure your new password is at least 8 characters long.
+                <div class="card-body p-4 px-sm-5 py-sm-5">
+                    <div class="alert bg-primary-subtle text-primary border-0 rounded-4 d-flex align-items-center mb-5 p-4 pe-5 position-relative overflow-hidden shadow-sm">
+                        <div class="position-absolute end-0 top-50 translate-middle-y opacity-25 me-n4">
+                            <i class="bi bi-shield-check" style="font-size: 7rem; color: var(--bs-primary);"></i>
+                        </div>
+                        <div class="position-relative z-1 d-flex">
+                            <i class="bi bi-info-circle-fill fs-3 me-4 flex-shrink-0 mt-1"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Protect your account</h6>
+                                <p class="mb-0 small opacity-75" style="line-height: 1.6;">Changing your password will log you out from other devices. Ensure your new password is at least 8 characters long and includes a mix of numbers, letters, and symbols.</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -120,73 +214,23 @@
                         {% csrf_token %}
                         {% for field in password_form %}
                             <div class="mb-4">
-                                <label class="form-label small fw-bold text-muted">{{ field.label|upper }}</label>
+                                <label class="form-label small fw-bold text-muted mb-2" style="letter-spacing: 0.5px;">{{ field.label|upper }}</label>
                                 {{ field }}
                                 {% if field.help_text %}
-                                    <small class="form-text text-muted">{{ field.help_text|safe }}</small>
+                                    <small class="form-text text-muted d-block mt-2">{{ field.help_text|safe }}</small>
                                 {% endif %}
                                 {% for error in field.errors %}
-                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                    <div class="text-danger small mt-2 d-flex align-items-center"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ error }}</div>
                                 {% endfor %}
                             </div>
                         {% endfor %}
                         
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <a href="{% url 'profile' %}" class="btn btn-light px-4">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4">Update Password</button>
+                        <hr class="border-light mt-5 mb-4">
+                        <div class="d-flex flex-column flex-sm-row justify-content-end gap-3 mt-4">
+                            <a href="{% url 'profile' %}" class="btn btn-light px-5 py-2 rounded-pill fw-medium">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill fw-medium shadow-sm transition-all btn-submit-hover">Update Password</button>
                         </div>
                     </form>
-                </div>
-            </div>
-
-        {% else %}
-            <!-- Profile Overview Section -->
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom border-light">
-                    <h5 class="card-title fw-bold mb-0">Profile Overview</h5>
-                    <a href="{% url 'edit_profile' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                        <i class="bi bi-pencil me-1"></i> Edit
-                    </a>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row g-4 mb-5">
-                        <div class="col-md-6">
-                            <div class="p-3 rounded bg-light border-start border-primary border-4">
-                                <label class="text-muted small fw-bold d-block mb-1">USERNAME</label>
-                                <span class="h6 fw-bold mb-0">{{ user.username }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 rounded bg-light border-start border-primary border-4">
-                                <label class="text-muted small fw-bold d-block mb-1">EMAIL STATUS</label>
-                                <span class="h6 fw-bold mb-0"><i class="bi bi-check-circle-fill text-success me-1"></i> Verified</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <h6 class="fw-bold mb-4 border-bottom pb-2">Personal Details</h6>
-                    <div class="row mb-4">
-                        <div class="col-sm-4 text-muted">First Name</div>
-                        <div class="col-sm-8 fw-semibold">{{ user.first_name|default:"Not set" }}</div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-sm-4 text-muted">Last Name</div>
-                        <div class="col-sm-8 fw-semibold">{{ user.last_name|default:"Not set" }}</div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-sm-4 text-muted">Primary Email</div>
-                        <div class="col-sm-8 fw-semibold">{{ user.email }}</div>
-                    </div>
-                    
-                    <h6 class="fw-bold mb-4 border-bottom pb-2 mt-5">Preferences</h6>
-                    <div class="row mb-4">
-                        <div class="col-sm-4 text-muted">Base Currency</div>
-                        <div class="col-sm-8 fw-semibold">{{ profile.currency|default:"INR" }} (Indian Rupee)</div>
-                    </div>
-                    <div class="row mb-0">
-                        <div class="col-sm-4 text-muted">Notifications</div>
-                        <div class="col-sm-8 fw-semibold">Enabled (Email & Push)</div>
-                    </div>
                 </div>
             </div>
         {% endif %}
@@ -194,35 +238,61 @@
 </div>
 
 <style>
+    /* Styling adjustments specifically for the layout elements */
     .list-group-item.active {
-        background-color: var(--bs-primary) !important;
-        border-color: var(--bs-primary) !important;
-        color: white !important;
-        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.25) !important;
+        transform: translateY(-2px);
     }
+    .list-group-item:not(.active):hover {
+        background-color: #f8f9fa;
+        transform: translateX(4px);
+    }
+    .transition-all {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    /* Input Styling */
     .form-control:focus, .form-select:focus {
-        border-color: var(--bs-primary);
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.3rem rgba(13, 110, 253, 0.15);
+        background-color: #fff;
     }
-    .card {
-        border-radius: 15px;
-        border: 1px solid rgba(0,0,0,0.05);
+    .form-control, .form-select {
+        border-radius: 0.6rem;
+        padding: 0.7rem 1rem;
+        border: 1px solid #ced4da;
+        background-color: #f8fbff;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
     }
-    .bg-gradient-blue {
-        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    .form-control:hover, .form-select:hover {
+        border-color: #b3d4fc;
     }
-    .avatar-circle {
-        width: 100px;
-        height: 100px;
+    
+    /* Stat Cards interactable feeling */
+    .stat-card {
+        transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .stat-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 30px rgba(13, 110, 253, 0.12) !important;
+    }
+    
+    /* Typography Utilities */
+    .tracking-tight {
+        letter-spacing: -0.03em;
+    }
+    
+    /* Button Hover states */
+    .btn-edit-hover:hover {
         background-color: var(--bs-primary);
         color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin: 0 auto;
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3) !important;
+        transform: translateY(-2px);
+    }
+    .btn-submit-hover:hover {
+        box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35) !important;
+        transform: translateY(-2px);
     }
 </style>
 {% endblock %}

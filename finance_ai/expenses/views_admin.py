@@ -25,7 +25,12 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.units import inch
 
-from .models import Expense
+from django.core.cache import cache
+from django.http import JsonResponse
+from .analytics_service import get_monthly_revenue, get_monthly_expense, get_expense_growth, get_user_stats, get_retention_rate
+from .utils.admin_insights import get_admin_insights
+
+from .models import Expense, Income
 
 
 def is_admin(user):
@@ -41,15 +46,36 @@ def admin_dashboard(request):
     if not (request.user.is_staff and request.user.is_superuser):
         return redirect('dashboard')
     # ============================================
+    # GLOBAL TIME FILTER
+    # ============================================
+    filter_type = request.GET.get('filter', '30')
+    today = datetime.now()
+    
+    if filter_type == '7':
+        start_date = today - timedelta(days=7)
+    elif filter_type == '30':
+        start_date = today - timedelta(days=30)
+    elif filter_type == '180':
+        start_date = today - timedelta(days=180)
+    elif filter_type == '365':
+        start_date = today - timedelta(days=365)
+    else:
+        start_date = today - timedelta(days=30)
+
+    # APPLY FILTER TO ALL DATA
+    expenses = Expense.objects.filter(date__gte=start_date)
+    incomes = Income.objects.filter(date__gte=start_date)
+    
+    # ============================================
     # SYSTEM-WIDE METRICS
     # ============================================
     total_users = User.objects.count()
-    total_expenses = Expense.objects.count()
-    total_amount = Expense.objects.aggregate(total=Sum('amount'))['total'] or 0
+    total_expenses = expenses.count()
+    total_amount = expenses.aggregate(total=Sum('amount'))['total'] or 0
     avg_expense = total_amount / total_expenses if total_expenses > 0 else 0
     
     # Most spent category (system-wide)
-    most_spent_category = Expense.objects.values('category').annotate(
+    most_spent_category = expenses.values('category').annotate(
         total=Sum('amount'),
         count=Count('id')
     ).order_by('-total').first()
@@ -60,9 +86,9 @@ def admin_dashboard(request):
         most_spent = 'N/A'
     
     # ============================================
-    # CATEGORY-WISE DISTRIBUTION (ALL TIME)
+    # CATEGORY-WISE DISTRIBUTION (FILTERED)
     # ============================================
-    all_category_data = Expense.objects.values('category').annotate(
+    all_category_data = expenses.values('category').annotate(
         total=Sum('amount')
     ).order_by('-total')
     
@@ -70,14 +96,9 @@ def admin_dashboard(request):
     category_values = [float(row['total']) for row in all_category_data]
     
     # ============================================
-    # MONTHLY TREND (LAST 12 MONTHS)
+    # MONTHLY TREND (FILTERED)
     # ============================================
-    today = datetime.now()
-    year_ago = today - timedelta(days=365)
-    
-    yearly_data = Expense.objects.filter(
-        date__gte=year_ago
-    ).annotate(
+    yearly_data = expenses.annotate(
         month=TruncMonth('date')
     ).values('month').annotate(
         total=Sum('amount')
@@ -89,9 +110,12 @@ def admin_dashboard(request):
     # ============================================
     # RECENT 10 EXPENSES (FOR ADMIN REVIEW)
     # ============================================
-    recent_expenses = Expense.objects.select_related('user').order_by('-date')[:10]
+    recent_expenses = expenses.select_related('user').order_by('-date')[:10]
     
     context = {
+        'filter_type': filter_type,
+        'expenses': expenses,
+        'incomes': incomes,
         # Metrics
         'total_users': total_users,
         'total_expenses': total_expenses,
@@ -105,6 +129,7 @@ def admin_dashboard(request):
         'trend_values': json.dumps(trend_values),
         # Recent activity
         'recent_expenses': recent_expenses,
+        'insights': get_admin_insights(),
     }
     return render(request, 'admin/admin_dashboard.html', context)
 
@@ -117,7 +142,7 @@ def manage_users(request):
     if not (request.user.is_staff and request.user.is_superuser):
         return redirect('dashboard')
     
-    users = User.objects.all().order_by('-date_joined')
+    users = User.objects.select_related('profile').all().order_by('-date_joined')
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -142,6 +167,44 @@ def manage_users(request):
     context = {'users': users}
     return render(request, 'admin/manage_users.html', context)
 
+
+@never_cache
+@user_passes_test(is_admin, redirect_field_name=None)
+def admin_analytics_data(request):
+    """API endpoint for Advanced Analytics Dashboard (JSON)."""
+    # Verify permission
+    if not (request.user.is_staff and request.user.is_superuser):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+    filter_type = request.GET.get('filter', '30')
+    today = datetime.now()
+    if filter_type == '7':
+        start_date = today - timedelta(days=7)
+    elif filter_type == '30':
+        start_date = today - timedelta(days=30)
+    elif filter_type == '180':
+        start_date = today - timedelta(days=180)
+    elif filter_type == '365':
+        start_date = today - timedelta(days=365)
+    else:
+        start_date = today - timedelta(days=30)
+
+    cache_key = f"admin_analytics_{filter_type}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return JsonResponse(cached_data)
+
+    data = {
+        "revenue": get_monthly_revenue(start_date=start_date),
+        "expenses": get_monthly_expense(start_date=start_date),
+        "growth": get_expense_growth(start_date=start_date),
+        "users": get_user_stats(start_date=start_date),
+        "retention": get_retention_rate(start_date=start_date)
+    }
+    
+    # Cache for 5 minutes
+    cache.set(cache_key, data, 300)
+    return JsonResponse(data)
 
 
 @never_cache

@@ -10,6 +10,7 @@ urlpatterns = [
     path('', views_admin.admin_dashboard, name='admin_dashboard'),
     path('users/', views_admin.manage_users, name='admin_manage_users'),
     path('reports/', views_admin.reports, name='admin_reports'),
+    path('analytics-data/', views_admin.admin_analytics_data, name='admin_analytics'),
     # Redirect removed "Manage Expenses" URL to admin dashboard
     path('expenses/', RedirectView.as_view(pattern_name='admin_dashboard', permanent=False)),
 ]

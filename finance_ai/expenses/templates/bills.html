@@ -22,15 +22,38 @@
     .btn { padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .btn-sm { padding: 0.35rem 0.85rem; border-radius: 6px; }
-    .card-fintech { color: #fff; }
-    .card-fintech .icon-circle { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .card-fintech .icon-circle i { font-size: 1.5rem; color: #fff; }
+    .card-fintech {
+      border: none !important;
+      border-radius: 16px;
+      color: #fff;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-width: 0;
+    }
+    .card-fintech .card-body {
+      padding: 1.25rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .card-fintech .icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-fintech .icon-circle i { font-size: 1.4rem; color: #fff; }
+    .stat-info { flex: 1; min-width: 0; }
     .bg-gradient-red    { background: linear-gradient(135deg, #dc2626, #f87171); }
     .bg-gradient-blue   { background: linear-gradient(135deg, #1e73ff, #60a5fa); }
     .bg-gradient-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
     .bg-gradient-purple { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
     .card-fintech:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-    .metric-label { letter-spacing: 1px; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; margin-bottom: 0; }
+    .metric-label { letter-spacing: 0.05em; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; opacity: 0.85; margin-bottom: 0.1rem; display: block; }
+    .metric-value { font-size: 1.4rem; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
     .bill-item { background: #fff; border: 1px solid #f1f5f9; border-radius: 14px; transition: all 0.2s ease; padding: 1rem 1.25rem; }
     .bill-item:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); border-color: #e2e8f0; }
@@ -58,56 +81,48 @@
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-blue h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Total Unpaid</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">{{ total_bills }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-list-check"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-list-check"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Total Unpaid</p>
+            <h3 class="metric-value mb-0">{{ total_bills }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">Active bills pending payment</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Active bills pending payment</span>
         </div>
       </div>
     </div>
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-red h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Overdue</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">{{ overdue_count }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-exclamation-triangle"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-exclamation-triangle"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Overdue</p>
+            <h3 class="metric-value mb-0">{{ overdue_count }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">Past their due date</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Past their due date</span>
         </div>
       </div>
     </div>
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-orange h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Due Soon</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">{{ near_due_count }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-alarm"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-alarm"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Due Soon</p>
+            <h3 class="metric-value mb-0">{{ near_due_count }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">Due within 3 days</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Due within 3 days</span>
         </div>
       </div>
     </div>
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-purple h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Total Amount Due</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">₹{{ total_amount_due|floatformat:2|intcomma }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-currency-rupee"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-currency-rupee"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Total Amount Due</p>
+            <h3 class="metric-value mb-0">₹{{ total_amount_due|floatformat:2|intcomma }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">Sum of all pending bills</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Sum of all pending bills</span>
         </div>
       </div>
     </div>
@@ -166,8 +181,10 @@
               <div class="fw-bold text-dark" style="font-size:1.05rem;">₹{{ bill.amount|floatformat:2|intcomma }}</div>
             </div>
 
-            <!-- Mark Paid Button -->
-            <div>
+            <!-- Actions -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+
+              <!-- Mark Paid -->
               <form method="post" action="{% url 'mark_bill_paid' bill.pk %}" class="d-inline">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="bills_list">
@@ -176,7 +193,19 @@
                   <i class="bi bi-check2-circle me-1"></i>Mark Paid
                 </button>
               </form>
+
+              <!-- Edit -->
+              <a href="{% url 'edit_bill' bill.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil me-1"></i>Edit
+              </a>
+
+              <!-- Delete -->
+              <a href="{% url 'delete_bill' bill.pk %}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>Delete
+              </a>
+
             </div>
+
 
           </div>
         </div>

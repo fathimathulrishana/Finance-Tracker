@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 {% block title %}Admin Dashboard | Finance Tracker{% endblock %}
 {% block content %}
 <div class="container py-4">
@@ -28,10 +29,33 @@
     .card-spotlight {
       border: none;
       color: #fff;
+      border-radius: 16px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-width: 0;
     }
 
-    .card-spotlight .icon {
-      font-size: 1.8rem;
+    .card-spotlight .card-body {
+      padding: 1.25rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .card-spotlight .icon-wrap {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .stat-info {
+      flex: 1;
+      min-width: 0;
     }
 
     .bg-sky {
@@ -56,13 +80,26 @@
 
     .card-hover:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
     }
 
     .metric-label {
-      letter-spacing: 0.03em;
-      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      font-size: 0.72rem;
       text-transform: uppercase;
+      opacity: 0.8;
+      margin-bottom: 0.1rem;
+      display: block;
+    }
+
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
     }
 
     .coming-soon-badge {
@@ -75,52 +112,52 @@
   <div class="row g-3 mb-4">
     <div class="col-md-6 col-xl-3">
       <div class="card card-spotlight bg-sky card-hover h-100">
-        <div class="card-body d-flex align-items-center justify-content-between">
-          <div>
-            <p class="metric-label mb-1 text-white-50">Total Users</p>
-            <h3 class="fw-bold mb-0">{{ total_users }}</h3>
-            <small class="text-white-50">Active in system</small>
+        <div class="card-body">
+          <div class="icon-wrap shadow-sm"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Total Users</p>
+            <h3 class="metric-value mb-0">{{ total_users }}</h3>
+            <small class="text-white-50" style="font-size: 0.65rem;">Active in system</small>
           </div>
-          <i class="bi bi-people-fill icon text-white-50"></i>
         </div>
       </div>
     </div>
 
     <div class="col-md-6 col-xl-3">
       <div class="card card-spotlight bg-emerald card-hover h-100">
-        <div class="card-body d-flex align-items-center justify-content-between">
-          <div>
-            <p class="metric-label mb-1 text-white-50">Total Expenses</p>
-            <h3 class="fw-bold mb-0">{{ total_expenses }}</h3>
-            <small class="text-white-50">All users combined</small>
+        <div class="card-body">
+          <div class="icon-wrap shadow-sm"><i class="bi bi-receipt"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Total Expenses</p>
+            <h3 class="metric-value mb-0">{{ total_expenses }}</h3>
+            <small class="text-white-50" style="font-size: 0.65rem;">All users combined</small>
           </div>
-          <i class="bi bi-receipt icon text-white-50"></i>
         </div>
       </div>
     </div>
 
     <div class="col-md-6 col-xl-3">
       <div class="card card-spotlight bg-amber card-hover h-100">
-        <div class="card-body d-flex align-items-center justify-content-between">
-          <div>
-            <p class="metric-label mb-1 text-white-50">Total Amount</p>
-            <h3 class="fw-bold mb-0">₹{{ total_amount }}</h3>
-            <small class="text-white-50">System-wide spending</small>
+        <div class="card-body">
+          <div class="icon-wrap shadow-sm"><i class="bi bi-cash-coin"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Total Amount</p>
+            <h3 class="metric-value mb-0">₹{{ total_amount|floatformat:2|intcomma }}</h3>
+            <small class="text-white-50" style="font-size: 0.65rem;">System-wide spending</small>
           </div>
-          <i class="bi bi-cash-coin icon text-white-50"></i>
         </div>
       </div>
     </div>
 
     <div class="col-md-6 col-xl-3">
       <div class="card card-spotlight bg-indigo card-hover h-100">
-        <div class="card-body d-flex align-items-center justify-content-between">
-          <div>
-            <p class="metric-label mb-1 text-white-50">Top Category</p>
-            <h3 class="fw-bold mb-0">{{ most_spent }}</h3>
-            <small class="text-white-50">Most spent across users</small>
+        <div class="card-body">
+          <div class="icon-wrap shadow-sm"><i class="bi bi-tag"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Top Category</p>
+            <h3 class="metric-value mb-0">{{ most_spent }}</h3>
+            <small class="text-white-50" style="font-size: 0.65rem;">Most spent across users</small>
           </div>
-          <i class="bi bi-tag icon text-white-50"></i>
         </div>
       </div>
     </div>
@@ -149,22 +186,7 @@
     </div>
   </div>
 
-  <!-- Admin Insights Panel -->
-  {% if insights %}
-  <div class="row mt-2 mb-2">
-      <div class="col-12">
-          <h5 class="fw-bold mb-3"><i class="bi bi-lightbulb text-warning"></i> Admin Insights</h5>
-      </div>
-      {% for insight in insights %}
-      <div class="col-md-6 col-lg-3 mb-3">
-          <div class="alert alert-{{ insight.type }} shadow-sm h-100 d-flex align-items-center m-0">
-              <span class="fs-4 me-2">{{ insight.icon }}</span> 
-              <span>{{ insight.message }}</span>
-          </div>
-      </div>
-      {% endfor %}
-  </div>
-  {% endif %}
+
 
   <!-- ============================================ -->
   <!-- ROW 1: FINANCIAL ANALYTICS                  -->
@@ -197,22 +219,7 @@
       </div>
     </div>
 
-    <!-- Expense Growth Rate (dynamic AJAX chart) -->
-    <div class="col-lg-6">
-      <div class="card h-100 card-hover shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h5 class="card-title mb-0"><i class="bi bi-graph-up-arrow text-danger"></i> Expense Growth Rate</h5>
-              <small class="text-muted">Month-over-month % change</small>
-            </div>
-            <span class="badge text-bg-danger">MoM</span>
-          </div>
-          <div class="spinner-border text-primary spinner-sm d-block mx-auto loaded-hide mt-3" role="status"></div>
-          <canvas id="expenseGrowthChart" height="240" class="d-none"></canvas>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Revenue vs Expense Trend (dynamic AJAX chart) -->
     <div class="col-lg-6">
@@ -231,68 +238,11 @@
       </div>
     </div>
 
-    <!-- Monthly Expense Trend (existing static chart) -->
-    <div class="col-lg-6">
-      <div class="card h-100 card-hover shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h5 class="card-title mb-0"><i class="bi bi-bar-chart-line text-indigo"></i> Monthly Spend Trend</h5>
-              <small class="text-muted">Expense volume over time</small>
-            </div>
-            <span class="badge text-bg-secondary">Filtered</span>
-          </div>
-          <canvas id="trendChart" height="240" aria-label="Monthly trend"></canvas>
-          <p class="text-muted small mt-3 mb-0"><strong>Insight:</strong> Tracks platform expense volume. Identify seasonality and growth patterns.</p>
-        </div>
-      </div>
-    </div>
+
   </div>
 
   <!-- ============================================ -->
-  <!-- ROW 2: USER ANALYTICS                       -->
-  <!-- ============================================ -->
-  <div class="d-flex align-items-center gap-2 mb-3 mt-4 border-bottom pb-2">
-    <span class="fs-5">👥</span>
-    <h5 class="fw-bold mb-0">User Analytics</h5>
-    <span class="badge text-bg-indigo ms-auto" style="background-color:#6366f1">Engagement</span>
-  </div>
 
-  <div class="row g-3 mb-4">
-    <!-- New vs Active Users -->
-    <div class="col-lg-6">
-      <div class="card h-100 card-hover shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h5 class="card-title mb-0"><i class="bi bi-people text-primary"></i> New vs Active Users</h5>
-              <small class="text-muted">Monthly user activity split</small>
-            </div>
-            <span class="badge text-bg-primary">Monthly</span>
-          </div>
-          <div class="spinner-border text-primary spinner-sm d-block mx-auto loaded-hide mt-3" role="status"></div>
-          <canvas id="usersChart" height="240" class="d-none"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Retention Rate -->
-    <div class="col-lg-6">
-      <div class="card h-100 card-hover shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h5 class="card-title mb-0"><i class="bi bi-arrow-repeat" style="color:#8b5cf6"></i> Retention Rate</h5>
-              <small class="text-muted">% Returning active users</small>
-            </div>
-            <span class="badge" style="background-color:#8b5cf6">Returning</span>
-          </div>
-          <div class="spinner-border text-primary spinner-sm d-block mx-auto loaded-hide mt-3" role="status"></div>
-          <canvas id="retentionChart" height="240" class="d-none"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ============================================ -->
   <!-- ROW 3: ACTIVITY & LOGS                      -->
@@ -366,8 +316,6 @@
 <script>
   const categoryLabels = JSON.parse('{{ category_labels|escapejs }}');
   const categoryValues = JSON.parse('{{ category_values|escapejs }}');
-  const trendLabels = JSON.parse('{{ trend_labels|escapejs }}');
-  const trendValues = JSON.parse('{{ trend_values|escapejs }}');
 
   function buildChart(ctx, config) {
     return new Chart(ctx, config);
@@ -394,30 +342,7 @@
     });
   }
 
-  const trendCtx = document.getElementById('trendChart');
-  if (trendCtx) {
-    buildChart(trendCtx, {
-      type: 'line',
-      data: {
-        labels: trendLabels,
-        datasets: [{
-          label: 'Monthly Spend',
-          data: trendValues,
-          fill: true,
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.12)',
-          tension: 0.35,
-          pointRadius: 4,
-          pointBackgroundColor: '#6366f1'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { color: '#6b7280' } }, x: { ticks: { color: '#6b7280' } } }
-      }
-    });
-  }
+
   // Advanced Analytics Dashboard Logic
   document.addEventListener("DOMContentLoaded", function() {
     fetch('{% url "admin_analytics" %}?filter={{ filter_type|default:"30" }}')
@@ -484,74 +409,9 @@
       });
     }
 
-    // 2. Growth
-    const growCtx = document.getElementById('expenseGrowthChart');
-    if (growCtx && data.growth) {
-      const growLabels = data.growth.map(d => d.month);
-      const growData = data.growth.map(d => d.growth);
-      const growColors = growData.map(v => v > 0 ? '#ef4444' : '#10b981'); // positive growth = red
-      buildChart(growCtx, {
-        type: 'bar',
-        data: {
-          labels: growLabels,
-          datasets: [{
-            label: 'Growth %',
-            data: growData,
-            backgroundColor: growColors,
-            borderRadius: 4
-          }]
-        },
-        options: { responsive: true }
-      });
-    }
 
-    // 3. Users Dual Bar
-    const usrCtx = document.getElementById('usersChart');
-    if (usrCtx && data.users) {
-      const usrLabels = data.users.map(d => d.month);
-      buildChart(usrCtx, {
-        type: 'bar',
-        data: {
-          labels: usrLabels,
-          datasets: [
-            {
-              label: 'New Users',
-              data: data.users.map(d => d.new_users),
-              backgroundColor: '#3b82f6',
-              borderRadius: 4
-            },
-            {
-              label: 'Active Users',
-              data: data.users.map(d => d.active_users),
-              backgroundColor: '#f59e0b',
-              borderRadius: 4
-            }
-          ]
-        },
-        options: { responsive: true, interaction: { mode: 'index', intersect: false } }
-      });
-    }
 
-    // 4. Retention
-    const retCtx = document.getElementById('retentionChart');
-    if (retCtx && data.retention) {
-      const retLabels = data.retention.map(d => d.month);
-      buildChart(retCtx, {
-        type: 'line',
-        data: {
-          labels: retLabels,
-          datasets: [{
-            label: 'Retention Rate %',
-            data: data.retention.map(d => d.retention),
-            borderColor: '#8b5cf6',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            fill: true,
-            tension: 0.2
-          }]
-        },
-        options: { responsive: true, scales: { y: { suggestedMax: 100 } } }
-      });
-    }
+
   }
 </script>
 {% endblock %}

@@ -30,15 +30,38 @@
     .btn { padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .btn-sm { padding: 0.35rem 0.85rem; border-radius: 6px; }
-    .card-fintech { color: #fff; }
-    .card-fintech .icon-circle { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .card-fintech .icon-circle i { font-size: 1.5rem; color: #fff; }
+    .card-fintech {
+      border: none !important;
+      border-radius: 16px;
+      color: #fff;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-width: 0;
+    }
+    .card-fintech .card-body {
+      padding: 1.25rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .card-fintech .icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-fintech .icon-circle i { font-size: 1.4rem; color: #fff; }
+    .stat-info { flex: 1; min-width: 0; }
     .bg-gradient-blue   { background: linear-gradient(135deg, #1e73ff, #60a5fa); }
     .bg-gradient-green  { background: linear-gradient(135deg, #16a34a, #4ade80); }
     .bg-gradient-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
     .bg-gradient-red    { background: linear-gradient(135deg, #dc2626, #f87171); }
     .card-fintech:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-    .metric-label { letter-spacing: 1px; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; margin-bottom: 0; }
+    .metric-label { letter-spacing: 0.05em; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; opacity: 0.85; margin-bottom: 0.1rem; display: block; }
+    .metric-value { font-size: 1.4rem; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
     /* Budget Table Row */
     .budget-row { background: #fff; border: 1px solid #f1f5f9; border-radius: 14px; padding: 1rem 1.25rem; transition: all 0.2s ease; }
@@ -69,56 +92,48 @@
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-blue h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Categories Set</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">{{ total_categories }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-grid"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-grid"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Categories Set</p>
+            <h3 class="metric-value mb-0">{{ total_categories }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">Active budget categories</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Active budget categories</span>
         </div>
       </div>
     </div>
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-red h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Over Budget</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">{{ over_budget_count }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-exclamation-triangle"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-exclamation-triangle"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Over Budget</p>
+            <h3 class="metric-value mb-0">{{ over_budget_count }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">Categories exceeding limit</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Categories exceeding limit</span>
         </div>
       </div>
     </div>
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-green h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Total Budgeted</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">₹{{ total_budgeted|floatformat:0|intcomma }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-wallet2"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-wallet2"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Total Budgeted</p>
+            <h3 class="metric-value mb-0">₹{{ total_budgeted|floatformat:0|intcomma }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">Monthly spending plan</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">Monthly spending plan</span>
         </div>
       </div>
     </div>
     <div class="col-md-6 col-xl-3">
       <div class="card card-fintech bg-gradient-orange h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <p class="metric-label">Total Spent</p>
-              <h3 class="fw-bold mb-0 text-white mt-1">₹{{ total_spent|floatformat:0|intcomma }}</h3>
-            </div>
-            <div class="icon-circle shadow-sm"><i class="bi bi-receipt"></i></div>
+          <div class="icon-circle shadow-sm"><i class="bi bi-receipt"></i></div>
+          <div class="stat-info">
+            <p class="metric-label">Total Spent</p>
+            <h3 class="metric-value mb-0">₹{{ total_spent|floatformat:0|intcomma }}</h3>
+            <small class="text-white-50" style="font-size:0.65rem;">This month across all categories</small>
           </div>
-          <span class="text-white text-opacity-75" style="font-size:0.75rem;">This month across all categories</span>
         </div>
       </div>
     </div>

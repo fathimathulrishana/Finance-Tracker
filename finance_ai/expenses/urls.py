@@ -26,6 +26,8 @@ urlpatterns = [
     # Upcoming Bills
     path('bills/', views.bills_list, name='bills_list'),
     path('bills/add/', views.add_bill, name='add_bill'),
+    path('bills/<int:pk>/edit/', views.edit_bill, name='edit_bill'),
+    path('bills/<int:pk>/delete/', views.delete_bill, name='delete_bill'),
     path('bills/pay/<int:pk>/', views.mark_bill_paid, name='mark_bill_paid'),
 
     # Budget Allocation

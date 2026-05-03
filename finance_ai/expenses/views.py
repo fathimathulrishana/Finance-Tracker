@@ -4,7 +4,7 @@ from calendar import month_name
 from decimal import Decimal
 
 from django.contrib import messages
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.cache import never_cache
 from django.core.cache import cache
@@ -179,6 +179,16 @@ def register(request):
 	else:
 		form = RegisterForm()
 	return render(request, 'register.html', {"form": form})
+
+
+def user_logout(request):
+	"""
+	Log out the user, completely flush the session to prevent
+	autofill or context leak, and redirect to the login page.
+	"""
+	logout(request)
+	request.session.flush()
+	return redirect('login')
 
 
 @login_required
@@ -1115,6 +1125,45 @@ def mark_bill_paid(request, pk):
 
 	next_url = request.POST.get('next', 'bills_list')
 	return redirect(next_url)
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def edit_bill(request, pk):
+	"""Edit an existing bill — owned by the current user."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	bill = get_object_or_404(Bill, pk=pk, user=request.user)
+
+	if request.method == 'POST':
+		form = BillForm(request.POST, instance=bill)
+		if form.is_valid():
+			form.save()
+			messages.success(request, f'Bill "{bill.title}" updated successfully!')
+			return redirect('bills_list')
+		messages.error(request, 'Please correct the errors below.')
+	else:
+		form = BillForm(instance=bill)
+	return render(request, 'edit_bill.html', {'form': form, 'bill': bill})
+
+
+@login_required
+@user_passes_test(is_regular_user, redirect_field_name=None)
+def delete_bill(request, pk):
+	"""Delete a bill — POST only, owned by the current user."""
+	if request.user.is_staff or request.user.is_superuser:
+		return redirect('admin_dashboard')
+
+	bill = get_object_or_404(Bill, pk=pk, user=request.user)
+
+	if request.method == 'POST':
+		title = bill.title
+		bill.delete()
+		messages.success(request, f'Bill "{title}" deleted successfully!')
+		return redirect('bills_list')
+
+	return render(request, 'confirm_delete_bill.html', {'bill': bill})
 
 
 # ─────────────────────────────────────────────
